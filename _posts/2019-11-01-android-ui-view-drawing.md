@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "安卓UI系列一:UI绘制流程"
-date:   2019-09-01 00:00:00
+date:   2019-11-01 00:00:00
 catalog:  true
 tags:
     - android
