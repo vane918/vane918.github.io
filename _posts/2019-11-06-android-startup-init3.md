@@ -9,17 +9,17 @@ tags:
     - init
 ---
 
-```
-system/core/init
- - init.cpp
-  - init_parser.cpp
- - init.rc
- - service.cpp
- - action.cpp
- - builtins.cpp
-```
 
-[TOC]
+
+> system/core/init
+>  - init.cpp
+>   - init_parser.cpp
+>  - init.rc
+>  - service.cpp
+>  - action.cpp
+>  - builtins.cpp
+
+
 
 ## 1 概述
 
@@ -895,7 +895,7 @@ void Service::RestartIfNeeded(time_t* process_needs_restart_at) {
 
  当init子进程退出时，会产生SIGCHLD信号，并发送给init进程，通过socket套接字传递数据，调用`wait_for_one_process()`方法，根据是否是oneshot，来决定是重启子进程，还是放弃启动。 
 
-![restart-service](/images/startup/restart-service.png)
+![restart-service](/images/startup/restart-service.PNG)
 
 ## 7 总结
 

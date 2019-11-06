@@ -9,16 +9,15 @@ tags:
     - init
 ---
 
-```
-system/core/init
- - init.cpp
- - property_service.cpp
- - signal_handler.cpp
- - service.cpp
- - action.cpp
-```
 
-[TOC]
+
+>  system/core/init
+>
+>  - init.cpp
+>  - property_service.cpp
+>  - signal_handler.cpp
+>  - service.cpp
+>  - action.cpp
 
 ## 1 概述
 
@@ -265,7 +264,7 @@ void register_epoll_handler(int fd, void (*fn)()) {
 当init进程调用`signal_handler_init`后，一旦收到子进程终止带来的SIGCHLD消息后， 将利用信号处理者`SIGCHLD_handler`向`signal_write_fd`写入信息。 由于绑定的关系，epoll句柄将监听到`signal_read_fd`收到消息， 于是将调用`handle_signal`进行处理。
 整个过程如下图所示：
 
-![load-sub-thread](/images/startup/load-sub-thread.png)
+![load-sub-thread](/images/startup/load-sub-thread.PNG)
 
 (1) init 进程接收到 SIGCHLD 信号
     通过 sigaction 函数将信号处理过程转移到 sigaction 结构体
@@ -454,7 +453,7 @@ void Action::ExecuteCommand(const Command& command) const {
 `signal_handler_init`的本质就是监听子进程死亡的信息，然后进行对应的清理工作，并根据死亡进程的类型， 
 决定是否需要重启进程或机器。上述过程其实最终可以简化为下图：
 
-![signal_handler_init](/images/startup/signal_handler_init.png)
+![signal_handler_init](/images/startup/signal_handler_init.PNG)
 
 ## 8  **设置默认系统属性及启动配置属性的服务端** 
 
@@ -515,7 +514,7 @@ init进程在共享内存区域中，创建并初始化属性域。其它进程�
 这就是init进程调用start_property_service的原因。其它进程修改属性值时，要预先向init进程提交值变更申请， 然后init进程处理该申请，并修改属性值。在访问和修改属性时，init进程都可以进行权限控制。
 总结一下，其它进程修改系统属性时，其它的进程像init进程发送请求后，由init进程检查权限后，修改共享内存区。  大致的流程如下图所示：
 
-![system-property_set](/images/startup/system-property_set.png)
+![system-property_set](/images/startup/system-property_set.PNG)
 
 ## 9 总结
 

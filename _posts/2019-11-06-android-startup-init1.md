@@ -9,13 +9,13 @@ tags:
     - init
 ---
 
-```
-system/core/init
- - init.cpp
- - init_first_state.cpp
-```
 
-[TOC]
+
+> system/core/init
+>  - init.cpp
+>  - init_first_state.cpp
+
+
 
 ## 1 概述
 
