@@ -9,18 +9,18 @@ tags:
     - zygote
 ---
 
-```
-system/core/init
- - init.cpp
- - init.rc
- - service.cpp
- - builtins.cpp
- - frameworks/base/cmds/app_process/app_main.cpp
- - frameworks/base/core/jni/AndroidRuntime.cpp
- - frameworks/base/core/java/com/android/internal/os/ZygoteInit.java
- - ZygoteServer.java
- - Zygote.java
-```
+
+
+> system/core/init
+>  - init.cpp
+>  - init.rc
+>  - service.cpp
+>  - builtins.cpp
+>  - frameworks/base/cmds/app_process/app_main.cpp
+>  - frameworks/base/core/jni/AndroidRuntime.cpp
+>  - frameworks/base/core/java/com/android/internal/os/ZygoteInit.java
+>  - ZygoteServer.java
+>  - Zygote.java
 
 
 
