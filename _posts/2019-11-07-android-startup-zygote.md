@@ -705,6 +705,7 @@ private static Runnable forkSystemServer(String abiList, String socketName,
             ZygoteConnection.applyInvokeWithSystemProperty(parsedArgs);
 
             /* Request to fork the system server process */
+            //fork子进程，该进程是system_server进程
             pid = Zygote.forkSystemServer(
                     parsedArgs.uid, parsedArgs.gid,
                     parsedArgs.gids,
@@ -717,6 +718,7 @@ private static Runnable forkSystemServer(String abiList, String socketName,
         }
 
         /* For child process */
+        //进入子进程system_server
         if (pid == 0) {
             //处理32_64和64_32的情况
             if (hasSecondZygote(abiList)) {
@@ -724,6 +726,7 @@ private static Runnable forkSystemServer(String abiList, String socketName,
             }
             // fork时会copy socket，system server需要主动关闭
             zygoteServer.closeServerSocket();
+            // 完成system_server进程剩余的工作
             return handleSystemServerProcess(parsedArgs);
         }
 
@@ -731,28 +734,7 @@ private static Runnable forkSystemServer(String abiList, String socketName,
 }
 ```
 
-上面的代码显示，调用`forkSystemServer`来进行启动SystemServer进程。
-
-[->Zygote.java]
-
-```java
-public static int forkSystemServer(int uid, int gid, int[] gids, int debugFlags,
-            int[][] rlimits, long permittedCapabilities, long effectiveCapabilities) {
-        VM_HOOKS.preFork();
-        // Resets nice priority for zygote process.
-        resetNicePriority();
-        int pid = nativeForkSystemServer(
-                uid, gid, gids, debugFlags, rlimits, permittedCapabilities, effectiveCapabilities);
-        // Enable tracing as soon as we enter the system_server.
-        if (pid == 0) {
-            Trace.setTracingEnabled(true, debugFlags);
-        }
-        VM_HOOKS.postForkCommon();
-        return pid;
-}
-```
-
-最后是通过调用JNI函数nativeForkSystemServer来启动SystemServer进程的。
+上面的代码显示，最后调用`handleSystemServerProcess`来开启SystemServer进程。留到SystemServer启动篇分析。
 
 ### 6.4  **处理请求信息** 
 
@@ -767,7 +749,7 @@ Runnable runSelectLoop(String abiList) {
         //首先将server socket加入到fds
         fds.add(mServerSocket.getFileDescriptor());
         peers.add(null);
-
+        //开启死循环，不断的等待AMS的请求
         while (true) {
              //每次循环，都重新创建需要监听的pollFds
             StructPollfd[] pollFds = new StructPollfd[fds.size()];
@@ -799,7 +781,7 @@ Runnable runSelectLoop(String abiList) {
                 } else {
                     try {
                         ZygoteConnection connection = peers.get(i);
-                        //其它通信连接收到数据，runOnce执行对应命令
+                        //其它通信连接收到数据，执行对应命令
                         final Runnable command = connection.processOneCommand(this);
 
                         if (mIsForkChild) {
