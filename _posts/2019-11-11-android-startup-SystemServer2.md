@@ -400,7 +400,7 @@ private void startCoreServices() {
 
  SystemServiceManager的startBootPhase()贯穿system_server进程的整个启动过程： 
 
-![restart-service](/images/startup/system-start-service.PNG)
+![system-start-service](/images/startup/system-start-service.PNG)
 
 ```java
 /*
@@ -486,6 +486,6 @@ WallpaperManagerService、InputMethodManagerService、LocationManagerService、C
 
  system_server进程，从源码角度划分为引导服务、核心服务、其他服务3类，合计总大约80多个服务，下面只是简单地对所有服务分类（个人划分，便于后期分析）： 
 
-![restart-service](/images/startup/service-type.PNG)
+![service-type](/images/startup/service-type.PNG)
 
  后续，会针对其中比较重要的服务进行展开详解。 
