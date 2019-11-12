@@ -30,7 +30,7 @@ ActivityManagerService（以下简称为 AMS）是 Android 中最核心的系统
 
 ## 2  AMS启动过程
 
-由[Android O系列启动流程--SystemServer篇二](http://vanelst.site/2019/11/11android-startup-SystemServer2/)可知，AMS是在SystemServer.java的startBootstrapServices()方法中启动的，如下所示：
+由[Android O系列启动流程--SystemServer篇二](http://vanelst.site/2019/11/11/android-startup-SystemServer2/)可知，AMS是在SystemServer.java的startBootstrapServices()方法中启动的，如下所示：
 
 ```java
 private void startBootstrapServices() {
