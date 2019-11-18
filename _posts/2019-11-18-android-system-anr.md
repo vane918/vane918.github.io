@@ -165,19 +165,19 @@ Cmd line: com.android.systemui
 
  以上的 trace 文件来自 systemui ANR，可以看出在 main 线程执行 NATIVE 方法的过程中，nSyncAndDrawFrame GPU 渲染的过程发生超时。 
 
-## 3.2 分析kernel思路
+## 3.3 分析kernel思路
 
 在此类日志中直接搜索lowmemorykiller, 如果存在则查看发生时间和ANR时间是否大致对应，相差无几的话，可以从该日志中看到操作系统层面当前内存情况，Free Memory说明的是空闲物理内存，File Free说明的则是文件Cache，也就是应用或系统从硬盘读取文件，使用结束后，kernel并没有这正释放这类内存，加以缓存，目的是为了下次读写过程加快速度。当然，发现Free和Other整体数值都偏低时，Kernel会进行一定程度的内存交换，导致整个系统卡顿。同时这类现象也会体现在log日志“slow_operation”中，即系统进程的调度也会收到影响。
 
-## 3.3 分析cpuinfo思路
+## 3.4 分析cpuinfo思路
 
 这类日志一目了然，可以清晰的看到哪类进程CPU偏高，如果存在明显偏高进程，那么ANR和此进程抢占CPU有一定关系。当然，如发现Kswapd，emmc进程在top中，则说明遇到系统内存压力或文件IO开销。
 
-## 3.4 分析meminfo思路
+## 3.5 分析meminfo思路
 
 分析该类日志，主要是看哪类应用或系统占用内存偏高，如果应用内存占用比较正常，系统也没有发生过度内存使用，那么则说明系统中缓存了大量进程，并没有及时释放导致系统整体内存偏低。
 
-## 3.5 综合分析
+## 3.6 综合分析
 
 综合分析当时系统环境，例如电量（低电可能会引起手机限频，限核等等），手机温度（温度过高也可能会引起限频），以及操作频率（例如执行monkey测试）等等；
 上面说了这么多，下面结合实例进行分析。
@@ -775,11 +775,13 @@ trace中的waiting to lock <0x2c1141c8> 说明这个主线程在等待锁一个o
   at dalvik.system.NativeStart.run(Native Method)
 ```
 
+### 4.7.2 结论
+
 tid为何没有释放锁object 0x2c1141c8呢？因为它在等到锁 object 0x2c117d50(一个com.android.internal.os.BatteryStatsImpl类型的对象)。如果大家有较丰富的捉虫经验的话，看到这， 想必都清楚了，持锁时又请求锁，极大的可能就是死锁了。
 
-## 4.7 实例六：日志不全，缺少Trace或其它日志
+## 4.8 实例六：日志不全，缺少Trace或其它日志
 
-### 4.7.1 分析
+### 4.8.1 分析
 
 遇到这类问题是比较郁闷的，这个时候智能拿现有的信息进行分析，尝试找出问题或改进方向，例如缺少Trace.但是其它日志相对齐全。
 例如在event日志中找到了应用ANR的大概时间点：10-14 00:40:26.010650
@@ -863,7 +865,7 @@ tid为何没有释放锁object 0x2c1141c8呢？因为它在等到锁 object 0x2c
 10-14 00:40:46.044026 11620 11654 D MtkOmxVdecEx: [0xe1eb7800] MtkOmxVdec::FreeBuffer all input buffers have been freed!!! signal mInPortFreeDoneSem(1)
 ```
 
-### 4.7.2 结论
+### 4.8.2 结论
 
 至此，导出进一步结论，应用发生ANR主要是上面两个进程高CPU引起调度不及时。至于进程高CPU的进一步原因，则需要相关模块Owner结合日志进一步分析，论证。
 
