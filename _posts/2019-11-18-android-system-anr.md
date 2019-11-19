@@ -45,7 +45,7 @@ ANR包含如下几种类型：
 
 -> 举例说明：
 
-```java
+```logcat
 04-01 13:12:11.572 I/InputDispatcher( 220): Application is not responding:Window{2b263310com.android.email/com.android.email.activity.SplitScreenActivitypaused=false}.
 5009.8ms since event, 5009.5ms since waitstarted
 04-0113:12:11.572 I/WindowManager( 220): Input event 
@@ -194,7 +194,7 @@ DALVIK THREADS (35):
 
 其他常用的状态定义在 Thread.java 文件中： 
 
-```java
+```logcat
 ThreadState (defined at "dalvik/vm/thread.h")
 THREAD_UNDEFINED = -1, / makes enum compatible with int32_t /
 THREAD_ZOMBIE = 0, / 线程死亡，终止运行 /
@@ -211,7 +211,7 @@ THREAD_SUSPENDED = 9, / suspended, usually by GC or debugger /
 
  举例分析： 
 
-```java
+```logcat
 ----- pid 609 at 2019-02-16 05:00:10 -----
 Cmd line: com.android.systemui
 ...
@@ -274,7 +274,7 @@ Cmd line: com.android.systemui
 
 观察Trace 主线程堆栈，发现主线程在申请内存过程中被block，等待GC结束，但通过堆栈进一步发现其GC并没有发生在该线程，也就是说在其他线程在执行GC动作，而主线程在申请内存过程中需要等待GC完成，再进一步申请内存。
 
-```java
+```logcat
 "main" prio=5 tid=1 WaitingForGcToComplete
 
   native: #00 pc 0000000000019980  /system/lib64/libc.so (syscall+28)
@@ -292,7 +292,7 @@ Cmd line: com.android.systemui
 
 再看看其它线程状态，进一步查找发现，下面任务正在执行GC
 
-```java
+```logcat
 "LeuiRunningState:Background" prio=5 tid=28 WaitingPerformingGc
 
 "AsyncTask #6" prio=5 tid=20 WaitingPerformingGc
@@ -300,7 +300,7 @@ Cmd line: com.android.systemui
 
 综上可以得出大致结论，Tid=28,20线程执行GC,导致主线程申请内存被Block.  但是进一步思考，应用GC是常有的事，但是为何这次需要这么长时间呢，带着疑问我们看看进程的内存使用情况：
 
-```java
+```logcat
 Total number of allocations 9887486
 Total bytes allocated 732MB
 Total bytes freed 476MB
@@ -323,7 +323,7 @@ Max memory 256MB
 
 观察Trace 主线程堆栈，发现主线程在Binder通信过程被Block.
 
-```java
+```logcat
 "main" prio=5 tid=1 Native
   | group="main" sCount=1 dsCount=0 obj=0x75f0eaa8 self=0x7fad046a00
   | sysTid=4298 nice=-6 cgrp=default sched=0/0 handle=0x7fb1d18fe8
@@ -348,7 +348,7 @@ Max memory 256MB
 
 进一步查找此线程在和哪个进程进行通信，搜索关键字“setAppCallback”（Android命名习惯，客户端和服务端函数命名基本相同），在Nfc的Binder_3线程响应了客户端请求，但在处理过程中被线程1阻塞，顺着再看看线程1状态
 
-```java
+```logcat
 "Binder_3" prio=5 tid=17 Blocked
 
   | group="main" sCount=1 dsCount=0 obj=0x12ddf0a0 self=0x7fa670f000
@@ -396,7 +396,7 @@ locked <0x0bed0520> (a com.android.nfc.P2pLinkManager)
 
 通过主线程，又发现正进程Binder通信，同时被block,搜索关键字“createBeamShareData”，发现又回到浏览器线程，Binder_6线程响应此请求，同时也处于Waiting状态
 
-```java
+```logcat
 "Binder_6" prio=5 tid=12 Waiting
 
   | group="main" sCount=1 dsCount=0 obj=0x12c13a00 self=0x7f52850e00
@@ -452,7 +452,7 @@ locked <0x0bed0520> (a com.android.nfc.P2pLinkManager)
 
 观察Trace 主线程堆栈，发现主线程处于Suspend状态；发生此类问题一般是两种情况，一种是进程自身过于繁忙，每次分配时间片都不够用，调度器强制把它置换成休眠了，另一种是系统比较繁忙，低优先级集成得不到时间片；带着这样的疑问，继续看：
 
-```java
+```logcat
 "main" prio=5 tid=1 Suspended
 
   | group="main" sCount=1 dsCount=0 obj=0x745518a0 self=0x7f86254a00
@@ -484,7 +484,7 @@ locked <0x0bed0520> (a com.android.nfc.P2pLinkManager)
 
 这个时候可以看看应用逻辑是否会存在繁忙操作不停抢占时间片，另一方面可以看看对应日志，通过logcat发现如下信息
 
-```java
+```logcat
 11-17 09:49:41.392  1532  1574 E ActivityManager: ANR in com.android.systemui
 
 11-17 09:49:41.392  1532  1574 E ActivityManager: PID: 21916
@@ -502,7 +502,7 @@ locked <0x0bed0520> (a com.android.nfc.P2pLinkManager)
 
 系统整体负载很重，常规下负载在10左右；另外发现kswapdCPU占用率极高，通过这两项可以得到系统内存偏低，不停kill进程并发生内存交换，是不是这样的呢？我们再搜索一下其它关键字Slow operation：
 
-```java
+```logcat
 11-17 09:42:25.292  1532  1572 W ActivityManager: Slow operation: 2440ms so far, now at startProcess: returned from zygote!
 
 11-17 09:42:25.357  1532  1572 W ActivityManager: Slow operation: 2505ms so far, now at startProcess: done updating battery stats
@@ -522,7 +522,7 @@ locked <0x0bed0520> (a com.android.nfc.P2pLinkManager)
 
 发现普通系统函数执行一次就耗费了2S以上，足见系统卡顿。现在我们继续延着内存方向确认，看看meminfo日志吧
 
-```java
+```logcat
 Total PSS by process:
 
   3441530 kB: com.android.mms (pid 2518 / activities)
@@ -542,7 +542,7 @@ Total PSS by process:
 
 该类问题和内存过低相似，查看主线程堆栈基本正常
 
-```java
+```logcat
 "main" prio=5 tid=1 Native
   | group="main" sCount=1 dsCount=0 obj=0x76261710 self=0x7f82646a00
   | sysTid=3084 nice=0 cgrp=default sched=0/0 handle=0x7f874adfe8
@@ -563,7 +563,7 @@ Total PSS by process:
 
 当处于这种状态时，我们直奔主题，分析log日志，按照logcat, kernel, cpuinfo, meminfo等依次分析：
 
-```java
+```logcat
 11-08 23:51:44.088  1514  1554 E ActivityManager: ANR in com.android.phone
 
 11-08 23:51:44.088  1514  1554 E ActivityManager: PID: 3084
@@ -584,7 +584,7 @@ Total PSS by process:
 通过上面的log日志，发现发生ANR进程本身CPU占用比较高，再搜索"slow operation"，“low_memory” 等关键字，都没有出现在log日志中，而lowmemorykiller也以较合理的频率出现在dmesg日志中，所以基本排除是内存过低导致；所以下面延着CPU方向继续分析。
 log日志无法找到更多线索，同时思考既然主线程状态正常，那么高cpu一定是其它线程引起的，那就反馈trace继续分析，查看phone进程的其它线程发现，几乎所有binder线程都处于waiting状态，只有Binder_2在工作：
 
-```java
+```logcat
 "Binder_1" prio=5 tid=40 TimedWaiting
 
 "Binder_3" prio=5 tid=40 TimedWaiting
@@ -627,7 +627,7 @@ log日志无法找到更多线索，同时思考既然主线程状态正常，�
 
 进一步分析该线程状态：state=R 说明其处于工作态。通过查看线程堆栈逻辑，发现正常情况下有log打印，借此再次返回到log日志，发现如下信息：
 
-```java
+```logcat
 11-08 23:51:14.512  3084  3289 W SQLiteConnectionPool: The connection pool for database '/data/user/0/com.android.providers.telephony/databases/mmssms.db' has been unable to grant a connection to thread 111 (Binder_3) with flags 0x1 for 30.000002 seconds.
 
 11-08 23:51:14.512  3084  3289 W SQLiteConnectionPool: Connections: 1 active, 0 idle, 0 available.
@@ -655,7 +655,7 @@ log日志无法找到更多线索，同时思考既然主线程状态正常，�
 
 该类问题主线程多半是处于空闲或Suspend状态，后者表示系统分配的CPU时间片无法满足当前需要便被强行切换，而引起该类现象的要么是底层系统动作，要么是其它任务高优先级任务抢占CPU行为；
 
-```java
+```logcat
 "main" prio=5 tid=1 Suspended
 
   | group="main" sCount=2 dsCount=0 obj=0x75285af8 self=0x7f87a46a00
@@ -695,7 +695,7 @@ log日志无法找到更多线索，同时思考既然主线程状态正常，�
 
 当Trace上无法继续分析时，便需要分析日志了，搜索关键字“anr in”，发现
 
-```java
+```logcat
 11-26 11:47:16.514  1457  1490 E ActivityManager: ANR in com.android.browser (com.android.browser/.MainActivity)
 
 11-26 11:47:16.514  1457  1490 E ActivityManager: PID: 9251
@@ -714,7 +714,7 @@ log日志无法找到更多线索，同时思考既然主线程状态正常，�
 浏览器自身CPU占用较高，至于System_server占用比较多，尤其是当大家看到“ CPU usage from 0ms to 10480ms later”已经kernel部分（74% kernel /）占用较多的情况下，不要再轻易怀疑是system_server高CPU导致，其高CPU的真正原因是需要dump各进程信息而已。
 顺着"ANR in"之前的日志，我们继续向上看，发现该应该进行了大量且频繁的GC操作
 
-```java
+```logcat
 11-26 11:47:05.204  1457  1467 I art     : Background partial concurrent mark sweep GC freed 842(578KB) AllocSpace objects, 455(85MB) LOS objects, 8% free, 169MB/185MB, paused 2.140ms total 245.072ms
 
 11-26 11:47:10.493  9251 31938 W art     : Suspending all threads took: 131.446ms
@@ -738,7 +738,7 @@ log日志无法找到更多线索，同时思考既然主线程状态正常，�
 
 而根据GC类型（Background partial concurrent）来看，应该是有任务在不停的申请和使用大量内存，带着这样的想法，需要再此返回到Trace日志，分析相关线程状态，在大量的对比分析筛选之后，很幸运的发现了如下线程（该线程只有采集TraceView才会出现），并且处于R状态。对TraceView了解的同事都知道，该任务会引起关联进程非常大CPU消耗，并且异常卡顿（主线程得不到及时响应）。
 
-```java
+```logcat
 "Sampling Profiler" daemon prio=9 tid=162 Native
 
   | group="system" sCount=1 dsCount=0 obj=0x13102220 self=0x7f5a82f800
@@ -756,7 +756,7 @@ log日志无法找到更多线索，同时思考既然主线程状态正常，�
 
 #### 4.6.1分析
 
-```java
+```logcat
 04-01 13:12:11.572 I/InputDispatcher( 220): Application is not responding:Window{2b263310com.Android.email/com.android.email.activity.SplitScreenActivitypaused=false}.  5009.8ms since event, 5009.5ms since waitstarted
 
 04-0113:12:11.572 I/WindowManager( 220): Input event dispatching timedout sending tocom.android.email/com.android.email.activity.SplitScreenActivity
@@ -816,7 +816,7 @@ log日志无法找到更多线索，同时思考既然主线程状态正常，�
 
 #### 4.7.1 分析
 
-```java
+```logcat
 DALVIK THREADS:
 (mutexes: tll=0 tsl=0 tscl=0 ghl=0)
 "main" prio=5 tid=1 MONITOR
@@ -839,7 +839,7 @@ DALVIK THREADS:
 
 trace中的waiting to lock <0x2c1141c8> 说明这个主线程在等待锁一个object 0x2c1141c8 (通常就是synchronized操作，这里就是com.android.server.am.ActivityManagerService类型的一个object),但被tid=59占住了， 再看看 tid=59的栈帧： 
 
-```java
+```logcat
 "Binder Thread #6" prio=5 tid=59 MONITOR
   | group="main" sCount=1 dsCount=0 obj=0x2c3bd838 self=0x34c5d8
   | sysTid=1120 nice=0 sched=0/0 cgrp=[fopen-error:2] handle=3460688
@@ -870,13 +870,13 @@ tid为何没有释放锁object 0x2c1141c8呢？因为它在等到锁 object 0x2c
 遇到这类问题是比较郁闷的，这个时候智能拿现有的信息进行分析，尝试找出问题或改进方向，例如缺少Trace.但是其它日志相对齐全。
 例如在event日志中找到了应用ANR的大概时间点：10-14 00:40:26.010650
 
-```java
+```logcat
 10-14 00:40:26.010650  1132  1172 I am_anr  : [0,19746,android.process.media,952680005,Broadcast of Intent { act=android.intent.action.MEDIA_SCANNER_SCAN_FILE dat=file:///sdcard/AutoSmoke_UI30/testSwitchLetvView_20161014_003533/1476376700108.png 在flg=0x10 cmp=com.android.providers.media/.MediaScannerReceiver }]
 ```
 
 在sys_log中发现ANR时进程CPU信息
 
-```java
+```logcat
 10-14 00:40:57.052274  1132  1172 E ANRManager: ANR in android.process.media, time=304722739
 10-14 00:40:57.052274  1132  1172 E ANRManager: Reason: Broadcast of Intent { act=android.intent.action.MEDIA_SCANNER_SCAN_FILE dat=file:///sdcard/AutoSmoke_UI30/testSwitchLetvView_20161014_003533/1476376700108.png flg=0x10 cmp=com.android.providers.media/.MediaScannerReceiver }
 10-14 00:40:57.052274  1132  1172 E ANRManager: Load: 37.88 / 25.54 / 20.22
@@ -893,7 +893,7 @@ tid为何没有释放锁object 0x2c1141c8呢？因为它在等到锁 object 0x2c
 
 从上面日志可以看到有两个进程CPU占用率偏高，且系统长时间CPU负载很重（Load: 37.88 / 25.54 / 20.22），尤其是ANR之前1分钟的负载达到37；由此我们可以大概率的猜测这次ANR事故是由CPU过高导致其它任务调度不及时导致，到底是不是呢？还是如其他同事认为的内存原因引起呢？下面我们继续看对应时间点的Kernel日志，关键字”lowmemorykiller“，得到如下信息：
 
-```java
+```logcat
 <6>[302600.931727]  (4)[10628:Cam@AuxSensorCo]lowmemorykiller: Killing 'android.browser' (28649), adj 18, score_adj 1000,
 
 <6>[302600.931727]    to free 72464kB on behalf of 'Cam@AuxSensorCo' (10628) because
@@ -928,7 +928,7 @@ tid为何没有释放锁object 0x2c1141c8呢？因为它在等到锁 object 0x2c
 通过以上日志分析可以得出结论：系统可用内存（Free+Cache）整体维持在1G左右，属于良好。查杀进程间隔时间较长，不会对系统负载带来太多开销。
 分析完以上日志，基本排除了内存问题引起的ANR，接下来再回到log日志，分析ANR高CPU进程的相关日志，看看能否有进一步挖掘。在log日志中，高亮进程PID(11620)，结果发现在很长一段时间内存，该进程有几十万的日志输出，此时心里或许有了希望，这么频繁的输出，且含有很多相同日志，那就说明该进程产生了大量循环，而大量循环也是高CPU的常见起因。
 
-```java
+```logcat
 10-14 00:40:46.035707 11620 19687 D MtkOmxVdecEx: [0xe1eb7800] RemoveInputBuf frm=0xe1eb8d70, omx=0xa3b9dfe0, i=5
 10-14 00:40:46.035791 11620 19687 D MtkOmxVdecEx: [0xe1eb7800] FB in (0xA3B9DFE0)
 10-14 00:40:46.036599 11620 11620 D MtkOmxMVAMgr: [0xb3cca9f0] [ION][FreeBuffer] entry=0xa3bcf3c0, va=0xd30d7000, pa=0x47600000,size=0x180000, srcFd=0xFFFFFFFF, fd=0xFFFFFFFF, bufHdr=0xA3B9CAE0
