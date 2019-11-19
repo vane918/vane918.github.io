@@ -97,18 +97,102 @@ minor 2 major
 
 一般情况下，如果ANR发生，对应的应用会收到SIGQUIT异常终止信号，dalvik虚拟机就会自动在/data/anr/目录下生成trace.txt文件，这个文件记录了在发生ANR时刻系统各个线程的执行状态，获取这个文件是不需要root权限的，因此首先需要做的就是通过adb pull命令将这个文件导出并等待分析。 产生ANR的原因有很多，比如CPU使用过高、事件没有得到及时的响应、死锁等 。
 
- trace 文件中会标明 Thread 的状态，如： 
+下面解析traces文件的相关字段含义
 
-```java
-DALVIK THREADS (12):
-// 当前线程名 - "main"
-// 线程优先级 - "prio=5"
-// 线程id - "tid=1"
-// 线程状态 - "Sleeping"
-"main" prio=5 tid=1 Runnable
+```logcat
+	----- pid 17024 at 2019-11-14 10:06:51 -----
+Cmd line: com.android.phone
+...
+DALVIK THREADS (35):
+
+"main" prio=5 tid=1 Blocked
+  | group="main" sCount=1 dsCount=0 obj=0x73ecc258 self=0xb7c5f2b8
+  | sysTid=17024 nice=0 cgrp=default sched=0/0 handle=0xb6f14b34
+  | state=S schedstat=( 8320408084 3590775759 4966 ) utm=583 stm=249 core=1 HZ=100
+  | stack=0xbe54f000-0xbe551000 stackSize=8MB
+  | held mutexes=
+  at android.os.MessageQueue.next(MessageQueue.java:325)
+  - waiting to lock <0x0248a0c6> (a android.os.MessageQueue)
+  at android.os.Looper.loop(Looper.java:135)
+  at android.app.ActivityThread.main(ActivityThread.java:5417)
+  at java.lang.reflect.Method.invoke!(Native method)
+  at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:726)
+  at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:616)
 ```
 
- 其他常用的状态定义在 Thread.java 文件中： 
+1. pid 17024 at 2019-11-14 10:06:51：发生ANR的进程和时间
+
+2. Cmd line: com.android.phone：发生ANR的进程名
+
+3. DALVIK THREADS (35)：指明下面都是当前运行的dvm thread  及所包含的线程数  35
+
+4. "main" prio=5 tid=1 Blocked
+
+   "main" ：进程名， main thread -> activity thread 
+
+   prio : java thread priority default is 5, （正常区域是1-10） 
+
+   tid : 是DVM thread id, 不是 linux thread id（下一行的sysTid才是） 
+
+   Blocked : 进程的状态， 正常有这些状态（ZOMBIE, RUNNABLE, TIMED_WAIT, MONITOR, WAIT,   INITALIZING,STARTING, NATIVE, VMWAIT, SUSPENDED,UNKNOWN） 
+
+5. group="main" sCount=1 dsCount=0 obj=0x73ecc258 self=0xb7c5f2b8
+
+   代表 DVM thread status 
+
+    group:是线程所处的线程组  default is "main"
+
+    sCount: 线程被正常挂起的次数 1 (thread suspend count) 
+
+   dsCount: 线程因调试而挂起次数 0 (thread dbg suspend count)
+
+   obj: 当前线程所关联的java线程对象 0x73ecc258 (thread obj address)
+
+   Sef: 该线程本身的地址 0xb7c5f2b8(thread point address)
+
+6. sysTid=17024 nice=0 cgrp=default sched=0/0 handle=0xb6f14b34
+
+    代表Linux thread status显示线程调度信息 
+
+   sysTId: linux系统下得本地线程id linux thread tid 
+
+   nice:线程的调度有优先级 linux thread nice value 
+
+   cgrp: 优先组属 c group
+
+   sched: 调度策略 cgroup policy/gourp id 
+
+   handle: 处理函数地址 handle address
+
+7. state=S schedstat=( 8320408084 3590775759 4966 ) utm=583 stm=249 core=1 HZ=100
+
+    代表CPU Sched stat 显示更多该线程当前上下文 
+
+   State:调度状态 process/thread state （正常有 "R (running)", "S (sleeping)", "D (disk sleep)", "T (stopped)", "t (tracing stop)", "Z (zombie)", "X (dead)", "x (dead)", "K (wakekill)", "W (waking)",），通常一般的Process 处于的状态都是S (sleeping), 而如果一旦发现处于如D (disk sleep), T (stopped), Z (zombie) 等就要认真审查.
+
+   schedstat (Run CPU Clock/ns, Wait CPU Clock/ns, Slice times) 该线程运行信息
+
+   utm: utime, user space time 线程用户态下使用的时间值(单位是jiffies）
+
+   stm: stime, kernel space time 内核态下得调度时间值
+
+   core: now running in cpu. 最后运行改线程的cup标识
+
+8. stack=0xbe54f000-0xbe551000 stackSize=8MB
+
+    代表堆栈地址区域及size 
+
+9. held mutexes=
+
+   代表是否被锁住，正常有四个属性(mutexes: tll=0 tsl=0 tscl=0 ghl=0)，0表示unlock，其它值都代表被lock，
+   tll: thread List Lock
+   tsl: thread Suspend Lock
+   tscl: thread Suspend Count Lock 
+   ghl: gc Heap Lock
+
+10.  剩余的就是一些 Call Stack 
+
+其他常用的状态定义在 Thread.java 文件中： 
 
 ```java
 ThreadState (defined at "dalvik/vm/thread.h")
