@@ -21,7 +21,7 @@ tags:
 - 需要安全地封装多种同一类型的操作时
 - 出现同一抽象类有多个子类，而又需要使用if-else或者switch-case来选择具体子类时
 
-### 3 UML类图
+## 3 UML类图
 
 ![uml-stragety](/images/design-partten/uml-stragety.PNG)
 
