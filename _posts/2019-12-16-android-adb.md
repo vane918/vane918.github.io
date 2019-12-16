@@ -220,7 +220,7 @@ emulator-5554	device
 
 5. 找到设备的 IP 地址。
 
-   一般能在「设置」-「关于手机」-「状态信息」-「IP地址」找到，也可以使用下文里 [查看设备信息 - IP 地址](posts/2019-12-16-android-adb.md#ip-地址) 一节里的方法用 adb 命令来查看。
+   一般能在「设置」-「关于手机」-「状态信息」-「IP地址」找到，也可以使用下文里 [查看设备信息 - IP 地址](#IP地址) 一节里的方法用 adb 命令来查看。
 
 6. 通过 IP 地址连接设备。
 
@@ -279,7 +279,7 @@ adb disconnect <device-ip-address>
 
 4. 找到 Android 设备的 IP 地址。
 
-   一般能在「设置」-「关于手机」-「状态信息」-「IP地址」找到，也可以使用下文里 [查看设备信息 - IP 地址](https://github.com/mzlogin/awesome-adb#ip-地址) 一节里的方法用 adb 命令来查看。
+   一般能在「设置」-「关于手机」-「状态信息」-「IP地址」找到，也可以使用下文里 [查看设备信息 - IP 地址](#IP地址) 一节里的方法用 adb 命令来查看。
 
 5. 在电脑上通过 adb 和 IP 地址连接 Android 设备。
 
@@ -1480,7 +1480,7 @@ adb shell getprop ro.build.version.release
 5.0.2
 ```
 
-### IP 地址
+### <span id="IP地址">IP 地址</span>
 
 每次想知道设备的 IP 地址的时候都得「设置」-「关于手机」-「状态信息」-「IP地址」很烦对不对？通过 adb 可以方便地查看。
 
