@@ -529,4 +529,15 @@ void svcinfo_death(struct binder_state *bs, void *ptr)
 
 ## 3 总结
 
-Service Manager的启动过程由三个步骤组成：第一步是调用函数binder_open打开设备文件/dev/binder, 以及将它映射到本进程的地址空间；第二步是调用函数binder_become_context_manager将自己注册为 Binder进程间通信机制的上下文管理者；第三步是调用函数binder_loop来循环等待和处理Client进程的通信请求。
+Service Manager的启动过程由三个步骤组成：
+
+1. 调用函数binder_open打开设备文件/dev/binder, 以及将它映射到本进程的地址空间；
+
+2. 调用函数binder_become_context_manager将自己注册为 Binder进程间通信机制的上下文管理者；
+
+3. 调用函数binder_loop来循环等待和处理Client进程的通信请求。
+
+   ServiceManager最核心的两个功能为查询和注册服务
+
+- 注册服务：记录服务名和handle信息，保存到svclist列表
+- 查询服务：根据服务名查询相应的的handle信息
