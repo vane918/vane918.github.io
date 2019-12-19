@@ -6,7 +6,7 @@ catalog:  true
 tags:
     - android
     - ServerManager启动
-    - Bidner
+    - Binder
 ---
 
 

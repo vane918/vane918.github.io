@@ -5,7 +5,7 @@ date:   2019-12-19 00:00:00
 catalog:  true
 tags:
     - android
-    - Bidner
+    - Binder
 ---
 
 
