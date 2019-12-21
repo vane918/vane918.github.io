@@ -35,7 +35,7 @@ Request request = new Request.Builder()
 
 ## 3 UML类图
 
-![uml-builder](/images/design-partten/uml-builder.PNG)
+![uml-builder](/images/design-partten/uml-builder.png)
 
 角色介绍：
 

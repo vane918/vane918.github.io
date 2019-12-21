@@ -817,7 +817,7 @@ Runnable runSelectLoop(String abiList) {
 
  Zygote启动过程的调用流程图： 
 
-![restart-service](/images/startup/zygote_start.PNG)
+![restart-service](/images/startup/zygote_start.png)
 
 1. 解析init.zygote.rc中的参数，创建AppRuntime并调用AppRuntime.start()方法；
 2. 调用AndroidRuntime的startVM()方法创建虚拟机，再调用startReg()注册JNI函数；

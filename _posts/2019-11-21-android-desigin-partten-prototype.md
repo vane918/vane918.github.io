@@ -23,7 +23,7 @@ tags:
 
 ## 3 UML类图
 
-![uml-prototype](/images/design-partten/uml-prototype.PNG)
+![uml-prototype](/images/design-partten/uml-prototype.png)
 
 角色介绍：
 

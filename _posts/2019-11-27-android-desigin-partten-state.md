@@ -22,7 +22,7 @@ tags:
 
 ## 3 UML类图
 
-![uml-state](/images/design-partten/uml-state.PNG)
+![uml-state](/images/design-partten/uml-state.png)
 
 - Context：环境类，定义客户感兴趣的接口，维护一个State子类的实例，这个实例定义了对象的当前状态
 - State：抽象状态类或者状态接口，定义一个或者一组接口，表示该状态下的行为

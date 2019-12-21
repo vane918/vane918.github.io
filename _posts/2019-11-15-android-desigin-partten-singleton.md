@@ -21,7 +21,7 @@ tags:
 
 ## 3 UML类图
 
-![uml-singleton](/images/design-partten/uml-singleton.PNG)
+![uml-singleton](/images/design-partten/uml-singleton.png)
 
 角色介绍：
 

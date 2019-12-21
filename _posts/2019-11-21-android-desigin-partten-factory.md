@@ -25,7 +25,7 @@ tags:
 
 ### 2.1 UML类图
 
-![uml-simple-factory](/images/design-partten/uml-simple-factory.PNG)
+![uml-simple-factory](/images/design-partten/uml-simple-factory.png)
 
 ### 2.2 简单工厂模式实现
 
@@ -126,7 +126,7 @@ public class Client {
 
 ### 3.1 UML类图
 
-![uml-method-factory](/images/design-partten/uml-method-factory.PNG)
+![uml-method-factory](/images/design-partten/uml-method-factory.png)
 
 ### 3.2 工厂方法模式实现
 
@@ -212,7 +212,7 @@ public class Client {
 
 ### 4.1 UML类图
 
-![uml-abstract-factory](/images/design-partten/uml-abstract-factory.PNG)
+![uml-abstract-factory](/images/design-partten/uml-abstract-factory.png)
 
 ### 4.2 抽象工厂模式实现
 

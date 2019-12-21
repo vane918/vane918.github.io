@@ -23,7 +23,7 @@ tags:
 
 ## 3 UML类图
 
-![uml-stragety](/images/design-partten/uml-stragety.PNG)
+![uml-stragety](/images/design-partten/uml-stragety.png)
 
 - Context：用来操作策略的上下文环境
 - Stragety：策略的抽象
