@@ -27,7 +27,7 @@ ServiceManager是Binder IPC通信过程中的守护进程，本身也是一个Bi
 
  ServiceManager是由init进程通过解析init.rc文件而创建的，最终调用到servicemanager.rc文件，其所对应的可执行程序/system/bin/servicemanager，所对应的源文件是service_manager.c，进程名为/system/bin/servicemanager。下面讲解源码前先给出servermanager启动过程的时序图。
 
-![server_manager启动流程](/images/binder/server_manager启动流程.png)
+![server_manager_start](/images/binder/server_manager_start.png)
 
 [->servicemanager.rc]
 
