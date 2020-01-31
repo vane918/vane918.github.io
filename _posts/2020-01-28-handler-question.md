@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "关于Handler的两个问题"
+title:  "关于Handler的几个问题"
 date:   2020-01-28 00:00:00
 catalog:  true
 tags:
@@ -17,6 +17,8 @@ tags:
 
 1. 更新ui为什么只能在ui线程
 2. 线程如何创建handler
+3. Looper 死循环为什么不会导致应用卡死，会消耗大量资源吗？
+4. 子线程有哪些更新UI的方法
 
 ## 2 更新ui为什么只能在ui线程
 
@@ -225,7 +227,102 @@ private void test() {
 
 Looper.loop()会开启一个死循环监听发往handler的message，handler和message的机制下一篇节讲解。
 
-## 4 Handler内存泄漏案例
+## 4 Looper 死循环为什么不会导致应用卡死，会消耗大量资源吗
+
+对于线程即是一段可执行的代码，当可执行代码执行完成后，线程生命周期便该终止了，线程退出。而对于主线程，我们是绝不希望会被运行一段时间，自己就退出，那么如何保证能一直存活呢？简单做法就是可执行代码是能一直执行下去的，死循环便能保证不会被退出，例如，binder线程也是采用死循环的方法，通过循环方式不同与Binder驱动进行读写操作，当然并非简单地死循环，无消息时会休眠。但这里可能又引发了另一个问题，既然是死循环又如何去处理其他事务呢？通过创建新线程的方式。真正会卡死主线程的操作是在回调方法onCreate/onStart/onResume等操作时间过长，会导致掉帧，甚至发生ANR，looper.loop本身不会导致应用卡死。
+主线程的死循环一直运行是不是特别消耗CPU资源呢？ 其实不然，这里就涉及到Linux pipe/epoll机制，简单说就是在主线程的MessageQueue没有消息时，便阻塞在loop的queue.next()中的nativePollOnce()方法里，此时主线程会释放CPU资源进入休眠状态，直到下个消息到达或者有事务发生，通过往pipe管道写端写入数据来唤醒主线程工作。这里采用的epoll机制，是一种IO多路复用机制，可以同时监控多个描述符，当某个描述符就绪(读或写就绪)，则立刻通知相应程序进行读或写操作，本质同步I/O，即读写是阻塞的。 所以说，主线程大多数时候都是处于休眠状态，并不会消耗大量CPU资源。
+
+## 5 子线程有哪些更新UI的方法
+
+- 主线程中定义Handler，子线程通过mHandler发送消息，主线程Handler的handleMessage更新UI。
+- 用Activity对象的runOnUiThread方法。
+- 创建Handler，传入getMainLooper。
+- View.post(Runnable r) 。
+
+### 5.1 runOnUiThread
+
+```java
+new Thread(new Runnable() {
+  @Override
+  public void run() {
+    runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        //DO UI method      
+      }
+    });
+  }
+}).start();
+
+
+final Handler mHandler = new Handler();
+public final void runOnUiThread(Runnable action) {
+  if (Thread.currentThread() != mUiThread) {
+    mHandler.post(action);//子线程（非UI线程）
+  } else {
+    action.run();
+  }
+}
+```
+
+进入Activity类里面，可以看到如果是在子线程中，通过mHandler发送的更新UI消息。而这个Handler是在Activity中创建的，也就是说在主线程中创建，所以便和我们在主线程中使用Handler更新UI没有差别。
+因为这个Looper，就是ActivityThread中创建的Looper（Looper.prepareMainLooper())。
+
+### 5.2 创建Handler，传入getMainLooper
+
+那么同理，我们在子线程中，是否也可以创建一个Handler，并获取`MainLooper`，从而在子线程中更新UI呢？
+首先我们看到，在`Looper`类中有静态对象`sMainLooper`，并且这个`sMainLooper`就是在ActivityThread中创建的`MainLooper`。
+
+```java
+private static Looper sMainLooper;  // guarded by Looper.class
+public static void prepareMainLooper() {
+  prepare(false);
+  synchronized (Looper.class) {
+    if (sMainLooper != null) {
+      throw new IllegalStateException("The main Looper has already been prepared.");
+    }
+    sMainLooper = myLooper();
+  }
+}
+```
+
+所以不用多说，我们就可以通过这个`sMainLooper`来进行更新UI操作。
+
+```java
+new Thread(new Runnable() {
+  @Override
+  public void run() {
+    Handler handler=new Handler(getMainLooper());
+    handler.post(new Runnable() {
+      @Override
+      public void run() {
+        //Do Ui method
+      }
+    });
+  }
+}).start();
+```
+
+### 5.3 View.post(Runnable r)
+
+post的源码
+
+```java
+public boolean post(Runnable action) {
+  final AttachInfo attachInfo = mAttachInfo;
+  if (attachInfo != null) {
+    return attachInfo.mHandler.post(action); //一般情况走这里
+  }
+  // Postpone the runnable until we know on which thread it needs to run.
+  // Assume that the runnable will be successfully placed after attach
+  getRunQueue().post(action);
+  return true;
+}
+```
+
+居然也是Handler从中作祟，根据Handler的注释，也可以清楚该Handler可以处理UI事件，也就是说它的Looper也是主线程的`sMainLooper`。这就是说我们常用的更新UI都是通过Handler实现的。另外更新UI 也可以通过`AsyncTask`来实现，`AsyncTask`的线程切换也是通过 Handler实现的。
+
+## 6 Handler内存泄漏案例
 
 在第一个activity中的子线程延时开启另一个activity。
 
@@ -283,7 +380,7 @@ public void run() {
 
 利用mHandler.sendMessageDelayed(message,10000)来延时发送消息。如果非要执行sleep()，可以在onDestroy()方法中将mHandler设为null，然后在sendMessage时判断mHandler非空，非空才执行sendMessage()。
 
-## 5 总结
+## 7 总结
 
 1. 只有在创建了ViewRootImpl对象后，在子线程更新ui才会报异常。
 2. 创建ViewRootImpl对象是在onResume()中。
