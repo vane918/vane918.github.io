@@ -306,7 +306,8 @@ private void findUsingReflectionInSingleClass(FindState findState) {
             // 得到Subscribe注解的threadMode属性值，即线程模式
             ThreadMode threadMode = subscribeAnnotation.threadMode();
             // 创建一个SubscriberMethod对象，并添加到subscriberMethods集合
-            findState.subscriberMethods.add(new SubscriberMethod(method, eventType, threadMode,                                                              subscribeAnnotation.priority(), subscribeAnnotation.sticky()));
+            findState.subscriberMethods.add(new SubscriberMethod(method,
+eventType,threadMode,subscribeAnnotation.priority(), subscribeAnnotation.sticky()));
           }
         }
       } 
