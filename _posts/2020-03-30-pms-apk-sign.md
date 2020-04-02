@@ -310,9 +310,9 @@ SHA1-Digest: XXaSktKiWqcfhbVCAylwxGU9L2s=
 
 采用openssl pkcs7 -inform DER -in CERT.RSA -noout -print_certs -print -text查看：
 
-![RSA-1](images/pms/apk-sign/RSA-1.png)
+![RSA-1](images/pms/apk-sign/RSA-1.PNG)
 
-![RSA-2](images/pms/apk-sign/RSA-2.png)
+![RSA-2](images/pms/apk-sign/RSA-2.PNG)
 
 包含了公钥 public_key、签名signature和摘要加密enc_digest等信息。
 
