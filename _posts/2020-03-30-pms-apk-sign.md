@@ -6,14 +6,14 @@ catalog:  true
 tags:
     - PMS
     - Android
-	- APK签名
+ 	- APK签名
 ---
 
 
 
 ## 1. APK签名基础知识
 
-在进行通信时，必须至少解决两个问题：一是确保消息来源的真实性，二是确保消息不会被第三方篡改。在安装Apk时，同样需要确保Apk来源的真实性以及Apk没有被第三方篡改。如何解决这两个问题呢？方法就是开发者对Apk进行签名：在Apk中写入一个具有唯一性的“指纹”。指纹写入以后，Apk中有任何修改，都会导致这个指纹无效，Android系统在安装Apk进行签名校验时就会不通过，从而保证了安全性。 
+ 在进行通信时，必须至少解决两个问题：一是确保消息来源的真实性，二是确保消息不会被第三方篡改。在安装Apk时，同样需要确保Apk来源的真实性以及Apk没有被第三方篡改。如何解决这两个问题呢？方法就是开发者对Apk进行签名：在Apk中写入一个具有唯一性的“指纹”。指纹写入以后，Apk中有任何修改，都会导致这个指纹无效，Android系统在安装Apk进行签名校验时就会不通过，从而保证了安全性。 
 在讲解Apk签名前，先简单讲解下签名涉及到的概念。
 
 ### 1.1 非对称加密算法
@@ -666,9 +666,10 @@ private static void collectCertificates(Package pkg, File apkFile, int parseFlag
 在这个方法中主要做了6个操作，流程概括如下：
 
 1. 在这个函数中，首先对签名apk做了v2方式的签名校验。也就是说首先用针对v2方式的签名方式来做签名校验，如果校验成功verified  = true。如果在校验的过程中抛出了异常，那么有两种可能：
+
    - apk没有用v2签名方式进行签名；
    - apk用了v2签名方式进行签名，但是签名检验没有成功。
-   
+
 2. 进行.SF和.RSA文件的验证工作
 
 3. 验证AndroidManifest.xml是否存在，不存在抛出异常
@@ -836,15 +837,15 @@ private void verifyCertificate(String certFile) {
 
 1. 验证.RSA文件
 
-    就是拿.RSA文件内容和.SF文件内容进行认证，具体认证调用verifyBytes方法 
+   就是拿.RSA文件内容和.SF文件内容进行认证，具体认证调用verifyBytes方法 
 
 2. 检验是否有V2签名标记
 
    因为在经过V2签名的APK中同时带有V1签名，攻击者可能将APK的V2签名删除，使得Android系统只校验V1签名。为防范此类攻击，V2方案规定:V2签名的APK如果还带V1签名，其 META-INF/.SF 文件的首部中必须包含 X-Android-APK-Signed 属性，如`X-Android-APK-Signed: 2`。该属性的值是一组以英文逗号分隔的 APK 签名方案 ID（v2 方案的 ID 为 2）。在验证 v1 签名时，对于此组中验证程序首选的 APK 签名方案（例如，v2 方案），如果 APK 没有相应的签名，APK 验证程序必须要拒绝这些 APK。此项保护依赖于内容 META-INF/.SF 文件受 v1 签名保护这一事实。
 
-4. 验证.SF文件
+3. 验证.SF文件
 
-5. 缓存.SF文件的entries
+4. 缓存.SF文件的entries
 
 **(1) 验证.RSA文件**
 
@@ -1654,7 +1655,7 @@ private static X509Certificate[] verifySigner(
 
 1. 找到算法等级最高的签名验证
 
-    从 `signatures` 中选择安全系数最高的受支持 `signature algorithm ID` 那个，算法等级为：SHA512 > SHA256。因为V2签名不用SHA1签名，因此不需要比较SHA1。
+   从 `signatures` 中选择安全系数最高的受支持 `signature algorithm ID` 那个，算法等级为：SHA512 > SHA256。因为V2签名不用SHA1签名，因此不需要比较SHA1。
 
 2. 使用公钥验证签名信息
 
@@ -1776,25 +1777,25 @@ v3 方案的设计与 [v2 方案](https://source.android.google.cn/security/apks
 “APK 签名方案 v3 分块”采用 v2 的格式：
 
 -  带长度前缀的 `signer`（带长度前缀）序列： 
-  -  带长度前缀的 `signed data`： 
-    -  带长度前缀的 `digests`（带长度前缀）序列： 
-      - `signature algorithm ID`（4 个字节）
-      - `digest`（带长度前缀）
-    - 带长度前缀的 X.509 certificates序列：
-      - 带长度前缀的 X.509 `certificate`（ASN.1 DER 格式）
-    - `minSDK` (uint32) - 如果平台版本低于此数字，则应忽略该签名者。
-    - `maxSDK` (uint32) - 如果平台版本高于此数字，则应忽略该签名者。
-    - 带长度前缀的additional attributes（带长度前缀）序列：
-      - `ID` (uint32)
-      - `value`（可变长度：附加属性的长度 - 4 个字节）
-      - `ID - 0x3ba06f8c`
-      - `value -` Proof-of-rotation 结构
-  - `minSDK` (uint32) - 签名数据部分中 minSDK 值的副本 - 用于在当前平台不在范围内时跳过对此签名的验证。必须与签名数据值匹配。
-  - `maxSDK` (uint32) - 签名数据部分中 maxSDK 值的副本 - 用于在当前平台不在范围内时跳过对此签名的验证。必须与签名数据值匹配。
-  - 带长度前缀的signatures（带长度前缀）序列：
-    - `signature algorithm ID` (uint32)
-    - `signed data` 带长度前缀的 `signature`
-  - 带长度前缀的 `public key`（SubjectPublicKeyInfo，ASN.1 DER 格式）
+   -  带长度前缀的 `signed data`： 
+      -  带长度前缀的 `digests`（带长度前缀）序列： 
+         - `signature algorithm ID`（4 个字节）
+         - `digest`（带长度前缀）
+      -  带长度前缀的 X.509 certificates序列：
+         - 带长度前缀的 X.509 `certificate`（ASN.1 DER 格式）
+      -  `minSDK` (uint32) - 如果平台版本低于此数字，则应忽略该签名者。
+      -  `maxSDK` (uint32) - 如果平台版本高于此数字，则应忽略该签名者。
+      -  带长度前缀的additional attributes（带长度前缀）序列：
+         - `ID` (uint32)
+         - `value`（可变长度：附加属性的长度 - 4 个字节）
+         - `ID - 0x3ba06f8c`
+         - `value -` Proof-of-rotation 结构
+   -  `minSDK` (uint32) - 签名数据部分中 minSDK 值的副本 - 用于在当前平台不在范围内时跳过对此签名的验证。必须与签名数据值匹配。
+   -  `maxSDK` (uint32) - 签名数据部分中 maxSDK 值的副本 - 用于在当前平台不在范围内时跳过对此签名的验证。必须与签名数据值匹配。
+   -  带长度前缀的signatures（带长度前缀）序列：
+      - `signature algorithm ID` (uint32)
+      - `signed data` 带长度前缀的 `signature`
+   -  带长度前缀的 `public key`（SubjectPublicKeyInfo，ASN.1 DER 格式）
 
 ### 4.3 Proof-of-rotation 和 self-trusted-old-certs 结构
 
