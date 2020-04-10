@@ -6,6 +6,7 @@ catalog:  true
 tags:
     - PMS
     - Android
+	- APK签名
 ---
 
 
@@ -74,7 +75,23 @@ tags:
 
 ![sign-verify](images/pms/apk-sign/sign-verify.png)
 
-## 1.4 证书格式
+## 1.4 ZIP文件结构
+
+apk也是一个zip文件，zip文件的结构如下：
+
+![zip](images/pms/apk-sign/zip.png)
+
+zip文件分为3部分：
+
+1. 数据区
+   此区块包含了zip中所有文件的记录，是一个列表，每条记录包含：文件名、压缩前后size、压缩后的数据等；
+2. 中央目录
+   存放目录信息，也是一个列表，每条记录包含：文件名、压缩前后size、本地文件头的起始偏移量等。通过本地文件头的起始偏移量即可找到压缩后的数据；
+3. 中央目录结尾记录
+   标识中央目录结尾，包含：中央目录条目数、size、起始偏移量、zip文件注释内容等。
+   通过中央目录起始偏移量和size即可定位到中央目录，再遍历中央目录条目，根据本地文件头的起始偏移量即可在数据区中找到相应的压缩数据。
+
+## 1.5 证书格式
 
 Apk签名时并没有直接指定私钥、公钥和数字证书，而是使用keystore文件，这些信息都包含在了keystore文件中。根据编码不同，keystore文件分为很多种，Android使用的是Java标准keystore格式JKS(Java Key Storage)，所以通过Android Studio导出的keystore文件是以.jks结尾的。
 keystore使用的证书标准是X.509，X.509标准也有多种编码格式，常用的有两种：pem（Privacy Enhanced Mail）和der（Distinguished Encoding Rules）。jks使用的是der格式，Android也支持直接使用pem格式的证书进行签名，Android系统源码中对系统apk进行签名的正是采用pem格式的证书：platform.x509.pem。
@@ -118,7 +135,7 @@ keystore使用的证书标准是X.509，X.509标准也有多种编码格式，�
 
 ![platform.x509](images/pms/apk-sign/platform.x509.png)
 
-## 1.5 V1和V2签名
+## 1.6 V1和V2签名
 
 在Android Studio中点击菜单 Build->Generate signed apk打包签名过程中， 可以看到两种签名选项 V1(Jar Signature)  V2(Full APK Signature)。 从Android 7.0开始，谷歌增加新签名方案 V2 Scheme (APK Signature) ， 但Android 7.0以下版本，只能用旧签名方案 V1 scheme (JAR signing) 。
 
@@ -142,7 +159,7 @@ keystore使用的证书标准是X.509，X.509标准也有多种编码格式，�
 
 - 签名验证时间更短(不需要解压验证),因而安装速度加快
 
-## 1.6 APK签名工具jarsigner和apksigner
+## 1.7 APK签名工具jarsigner和apksigner
 
 jarsigner是JDK提供的针对jar包签名的通用工具， 位于JDK/bin/jarsigner.exe。apksigner是Google官方提供的针对Android apk签名及验证的专用工具，位于Android SDK/build-tools/SDK版本/apksigner.bat。源码在build/tools/signapk。 不管是apk包还是jar包，本质都是zip格式的压缩包，所以它们的签名过程都差不多。
 
@@ -152,7 +169,7 @@ jarsigner是JDK提供的针对jar包签名的通用工具， 位于JDK/bin/jarsi
 
 - jarsigner使用keystore文件进行签名，apksigner除了支持使用keystore文件进行签名外，还支持直接指定pem证书文件和私钥进行签名
 
-## 1.7 签名相关命令
+## 1.8 签名相关命令
 
 **jarsigner签名**
 
@@ -174,11 +191,15 @@ apksigner 签名默认同时使用V1和V2签名。
 
  **若密钥库中有多个密钥对,则必须指定密钥别名**
 
-`apksigner sign --ks 密钥库名 **--ks-key-alias 密钥别名** --in app.apk --out app-signed.apk`
+`apksigner sign --ks 密钥库名 --ks-key-alias 密钥别名 --in app.apk --out app-signed.apk`
+
+**使用两个签名对APK进行签名**
+
+`apksigner sign --ks 密钥库名1 --ks-key-alias 密钥别名1 --next-signer --ks 密钥库名2 --ks-key-alias 密钥别名2 --in app.apk --out app-signed.apk`
 
 **如果想禁用V2签名** 
 
-`apksigner sign **--v2-signing-enabled false** --ks 密钥库名 --in app.apk --out app-signed.apk`
+`apksigner sign --v2-signing-enabled false --ks 密钥库名 --in app.apk --out app-signed.apk`
 
 `apksigner sign --key release.pk8 --cert release.x509.pem --in app-unsign.apk --out app-signed.apk`
 
@@ -232,7 +253,7 @@ keytool -list  -v -keystore test.jks -storepass 123456
 **查看PEM格式证书**
 `openssl x509 -in cert.x509.pem -text -noout`
 
-**apksigner检查apk是否签名，以及查看证书SHA1值**
+**apksigner检查apk是否签名，以及查看证书SHA值**
 `apksigner verify -v --print-certs apk`
 
 ```
@@ -336,7 +357,7 @@ apk签名流程概括如下：
 
  APK 签名方案 v2 是一种全文件签名方案，该方案能够发现对 APK 的受保护部分进行的所有更改，从而有助于加快验证速度并增强完整性保证。 
 
-### 2.2.1 V1 签名机制的劣势
+### 2.2.1 V2 的改进
 
 从 Android 7.0 开始，Android 支持了一套全新的 V2 签名机制，为什么要推出新的签名机制呢？ v1 签名有两个地方可以改进：
 
@@ -352,12 +373,10 @@ apk签名流程概括如下：
 
 为了解决这两个问题，在 Android 7.0 Nougat 中引入了全新的 APK Signature Scheme v2。
 
-### 2.2.2 V2 的改进
-
 由于在 v1 仅针对单个 ZIP 条目进行验证，因此，在apk 签名后可进行许多修改：可以移动甚至重新压缩文件。事实上，编译过程中要用到的 ZIPalign 工具就是这么做的，它用于根据正确的字节限制调整 ZIP 条目，以改进运行时性能。而且我们也可以利用这个东西，在打包之后修改 META-INF 目录下面的内容，或者修改 ZIP 的注释来实现多渠道的打包，在 v1 签名中都可以校验通过。
 v2 签名将验证apk中的所有字节，而不是单个 ZIP 条目，因此，在签名后无法再运行 ZIPalign（必须在签名之前执行）。
 
-### 2.2.3 V2 签名模式
+### 2.2.2 V2 签名的原理
 
  V2方案为加强数据完整性保证，不在数据区和中央目录中插入数据，选择在 数据区和中央目录 之间插入一个APK签名分块，存储了签名，摘要，签名算法，证书链，额外属性等信息，从而保证了原始zip（apk）数据的完整性。具体如下所示： 
 
@@ -372,7 +391,42 @@ v2 签名将验证apk中的所有字节，而不是单个 ZIP 条目，因此，
 
 其中，应用签名方案的签名信息会被保存在 区块 2 (APK Signing Block)中， 区块 2负责保护第 1、3、4 部分的完整性，以及第 2 部分包含的`APK 签名方案 v2分块`中的`signed data`分块的完整性。 
 
-### 2.2.4 V2 分块格式
+在解析 APK 时，首先要通过以下方法找到“ZIP 中央目录”的起始位置：在文件末尾找到“ZIP 中央目录结尾”记录，然后从该记录中读取“中央目录”的起始偏移量。通过 `magic` 值，可以快速确定“中央目录”前方可能是“APK 签名分块”。然后，通过 `size of block` 值，可以高效地找到该分块在文件中的起始位置。 
+
+### 2.2.3 APK 签名分块
+
+为了保持与 v1 APK 格式向后兼容，v2 及更高版本的 APK 签名会存储在“APK 签名分块”内，该分块是为了支持 APK 签名方案 v2 而引入的一个新容器。在 APK 文件中，“APK 签名分块”位于“ZIP 中央目录”（位于文件末尾）之前并紧邻该部分。
+
+该分块包含多个“ID-值”对，所采用的封装方式有助于更轻松地在 APK 中找到该分块。APK 的 v2 签名会存储为一个“ID-值”对，其中 ID 为 0x7109871a。
+
+**格式**
+
+“APK 签名分块”的格式如下（所有数字字段均采用小端字节序）：
+
+- `size of block`，以字节数（不含此字段）计 (uint64)
+- 带 uint64 长度前缀的“ID-值”对序列：
+  - `ID` (uint32)
+  - `value`（可变长度：“ID-值”对的长度 - 4 个字节）
+- `size of block`，以字节数计 - 与第一个字段相同 (uint64)
+- `magic`“APK 签名分块 42”（16 个字节）
+
+![find-v2](images/pms/apk-sign/find-v2.png)
+
+在解析 APK 时，首先要通过以下方法找到“ZIP 中央目录”的起始位置：在文件末尾找到“ZIP 中央目录结尾”记录，然后从该记录中读取“中央目录”的起始偏移量。通过 `magic` 值，可以快速确定“中央目录”前方可能是“APK 签名分块”。然后，通过 `size of block` 值，可以高效地找到该分块在文件中的起始位置。
+
+在解译该分块时，应忽略 ID 未知的“ID-值”对。
+
+### 2.2.4 APK 签名方案 v2 分块
+
+APK 由一个或多个签名者/身份签名，每个签名者/身份均由一个签名密钥来表示。该信息会以“APK 签名方案 v2 分块”的形式存储。对于每个签名者，都会存储以下信息：
+
+- （签名算法、摘要、签名）元组。摘要会存储起来，以便将签名验证和 APK 内容完整性检查拆开进行。
+- 表示签名者身份的 X.509 证书链。
+- 采用键值对形式的其他属性。
+
+对于每位签名者，都会使用收到的列表中支持的签名来验证 APK。签名算法未知的签名会被忽略。如果遇到多个支持的签名，则由每个实现来选择使用哪个签名。这样一来，以后便能够以向后兼容的方式引入安全系数更高的签名方法。建议的方法是验证安全系数最高的签名。
+
+**格式**
 
 APK 签名方案 v2分块是一个签名序列，说明可以使用多个签名者对同一个APK进行签名。每个签名信息中均包含了三个部分的内容：
 
@@ -390,10 +444,42 @@ APK 签名方案 v2分块是一个签名序列，说明可以使用多个签名�
 
 ![V2-sign](images/pms/apk-sign/V2-sign.png)
 
-### 2.2.5 摘要计算过程
+“APK 签名方案 v2 分块”存储在“APK 签名分块”内，ID 为 `0x7109871a`。
 
-v2 签名块负责保护第 1、3、4 部分的完整性，以及第 2 部分包含的APK 签名方案 v2分块中的 signed data 分块的完整性。第1、3、4部分的完整性是通过内容摘要来保护的，这些摘要保存在signed data分块中，而signed data分块的完整性是通过签名来保证的。下面来看摘要的计算过程：
-第 1、3 和 4 部分的摘要采用以下计算方式，类似于两级 Merkle 树。
+**签名算法 ID**
+
+- 0x0101 - 采用 SHA2-256 摘要、SHA2-256 MGF1、32 个字节的盐且尾部为 0xbc 的 RSASSA-PSS 算法
+- 0x0102 - 采用 SHA2-512 摘要、SHA2-512 MGF1、64 个字节的盐且尾部为 0xbc 的 RSASSA-PSS 算法
+- 0x0103 - 采用 SHA2-256 摘要的 RSASSA-PKCS1-v1_5 算法。此算法适用于需要确定性签名的构建系统。
+- 0x0104 - 采用 SHA2-512 摘要的 RSASSA-PKCS1-v1_5 算法。此算法适用于需要确定性签名的构建系统。
+- 0x0201 - 采用 SHA2-256 摘要的 ECDSA 算法
+- 0x0202 - 采用 SHA2-512 摘要的 ECDSA 算法
+- 0x0301 - 采用 SHA2-256 摘要的 DSA 算法
+
+Android 平台支持上述所有签名算法。签名工具可能只支持其中一部分算法。
+
+**支持的密钥大小和 EC 曲线：**
+
+- RSA：1024、2048、4096、8192、16384
+- EC：NIST P-256、P-384、P-521
+- DSA：1024、2048、3072
+
+### 2.2.5 受完整性保护的内容
+
+为了保护 APK 内容，APK 包含以下 4 个部分：
+
+1. ZIP 条目的内容（从偏移量 0 处开始一直到“APK 签名分块”的起始位置）
+2. APK 签名分块
+3. ZIP 中央目录
+4. ZIP 中央目录结尾
+
+![v2](images/pms/apk-sign/v2.png)
+
+APK 签名方案 v2 负责保护第 1、3、4 部分的完整性，以及第 2 部分包含的“APK 签名方案 v2 分块”中的 `signed data` 分块的完整性。
+
+第 1、3 和 4 部分的完整性通过其内容的一个或多个摘要来保护，这些摘要存储在 `signed data` 分块中，而这些分块则通过一个或多个签名来保护。
+
+第 1、3 和 4 部分的摘要采用以下计算方式，类似于两级 [Merkle 树](https://en.wikipedia.org/wiki/Merkle_tree)。每个部分都会被拆分成多个大小为 1 MB（220 个字节）的连续块。每个部分的最后一个块可能会短一些。每个块的摘要均通过字节 `0xa5` 的串联、块的长度（采用小端字节序的 uint32 值，以字节数计）和块的内容进行计算。顶级摘要通过字节 `0x5a` 的串联、块数（采用小端字节序的 uint32 值）以及块的摘要的连接（按照块在 APK 中显示的顺序）进行计算。摘要以分块方式计算，以便通过并行处理来加快计算速度。摘要流程如下：
 
 1. 将第1、3、4部分拆分为多个块(chunk)
    将每个部分拆分成多个大小为 1 MB大小的chunk，最后一个chunk可能小于1M。之所以分块，是为了可以通过并行计算摘要以加快计算速度；
@@ -402,6 +488,14 @@ v2 签名块负责保护第 1、3、4 部分的完整性，以及第 2 部分包
 3. 计算整体摘要
    字节 0x5a + chunk数 + 块的摘要的连接（按块在 APK 中的顺序）进行计算。
    这里要注意的是：中央目录结尾记录中包含了中央目录的起始偏移量，插入APK签名分块后，中央目录的起始偏移量将发生变化。故在校验签名计算摘要时，需要把中央目录的起始偏移量当作APK签名分块的起始偏量。
+
+![v2-digest](images/pms/apk-sign/v2-digest.png)
+
+### 2.2.6 防回滚保护
+
+攻击者可能会试图在支持对带 v2 签名的 APK 进行验证的 Android 平台上将带 v2 签名的 APK 作为带 v1 签名的 APK 进行验证。为了防范此类攻击，带 v2 签名的 APK 如果还带 v1 签名，其 META-INF/.SF 文件的主要部分中必须包含 X-Android-APK-Signed 属性。该属性的值是一组以逗号分隔的 APK 签名方案 ID（v2 方案的 ID 为 2）。在验证 v1 签名时，对于此组中验证程序首选的 APK 签名方案（例如，v2 方案），如果 APK 没有相应的签名，APK 验证程序必须要拒绝这些 APK。此项保护依赖于内容 META-INF/.SF 文件受 v1 签名保护这一事实。请参阅 [JAR 已签名的 APK 的验证](https://source.android.google.cn/security/apksigning/v2?hl=zh-cn#v1-verification)部分。
+
+攻击者可能会试图从“APK 签名方案 v2 分块”中删除安全系数较高的签名。为了防范此类攻击，对 APK 进行签名时使用的签名算法 ID 的列表会存储在通过各个签名保护的 `signed data` 分块中。
 
 ## 2.3 APK 签名方案总结
 
@@ -414,6 +508,18 @@ Android在7.0以前使用的一套签名方案：在apk根目录下的META-INF/�
 google为Android系统设计了一套apk安装时验证apk签名的方案，目的是保证apk的安全性，避免被不怀好意的攻击者恶意篡改。接下来分别分析apk的两种签名方案在apk安装时是如何验证的。
 
 ## 3.1 APK签名方案V1验证流程
+
+已签名的apk 是一种[标准的已签名 JAR](https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html#Signed_JAR_File) 。其中包含的条目必须与 META-INF/MANIFEST.MF 中列出的条目完全相同，并且所有条目都必须已由同一组签名者签名。其完整性按照以下方式进行验证：
+
+1. 每个签名者均由一个包含 META-INF/<signer>.SF 和 META-INF/<signer>.(RSA|DSA|EC) 的 JAR 条目来表示。
+2. <signer>.(RSA|DSA|EC) 是[具有 SignedData 结构的 PKCS #7 CMS ContentInfo](https://tools.ietf.org/html/rfc5652)，其签名通过 <signer>.SF 进行验证。
+3. <signer>.SF 文件包含 META-INF/MANIFEST.MF 的全文件摘要和 META-INF/MANIFEST.MF 各个部分的摘要。需要验证 MANIFEST.MF 的全文件摘要。如果该验证失败，则改为验证 MANIFEST.MF 各个部分的摘要。
+4. 对于每个受完整性保护的 JAR 条目，META-INF/MANIFEST.MF 都包含一个具有相应名称的部分，其中包含相应条目未压缩内容的摘要。所有这些摘要都需要验证。
+5. 如果 APK 包含未在 MANIFEST.MF 中列出且不属于 JAR 签名一部分的 JAR 条目，则 APK 验证将会失败。
+
+因此，保护链是每个受完整性保护的 JAR 条目的 <signer>.(RSA|DSA|EC) -> <signer>.SF -> MANIFEST.MF -> 内容。
+
+接下来结合源码分析apk V1签名验证的流程。
 
 安装apk时验证签名的入口在： frameworks\base\core\java\android\content\pm\PackageParser.java
 
@@ -557,7 +663,7 @@ private static void collectCertificates(Package pkg, File apkFile, int parseFlag
 }
 ```
 
-在这个方法中主要做了5个操作，流程概括如下：
+在这个方法中主要做了6个操作，流程概括如下：
 
 1. 在这个函数中，首先对签名apk做了v2方式的签名校验。也就是说首先用针对v2方式的签名方式来做签名校验，如果校验成功verified  = true。如果在校验的过程中抛出了异常，那么有两种可能：
    - apk没有用v2签名方式进行签名；
@@ -575,7 +681,7 @@ private static void collectCertificates(Package pkg, File apkFile, int parseFlag
 
 6. 认证开发者身份
 
-V2签名发验证在下一小节分析。接下来分析V1签名方案的流程。
+验证apk中的每一个entry(如AndroidManifest.xml)是否证书都一致，不一致则抛出异常。
 
 #### 3.1.1 进行.RSA和.SF文件的验证工作
 
@@ -1169,7 +1275,27 @@ V1签名方案概括如下：
 
 ## 3.2 APK签名方案V2验证流程
 
-由APK的V2签名方案可知， 签名数据会存放到apk文件的单独区块内，那么安装时系统对于V2签名是如何验证的呢？ 接下来跟踪源码分析apk安装时如何验证V2签名的。
+由APK的V2签名方案可知， 签名数据会存放到apk文件的单独区块内，那么安装时系统对于V2签名是如何验证的呢？  在 Android 7.0 及更高版本中，可以根据 APK 签名方案 v2+ 或 JAR 签名（v1 方案）验证 APK。更低版本的平台会忽略 v2 签名，仅验证 v1 签名。 
+
+![v1v2](images/pms/apk-sign/v1v2.png)
+
+### 3.2.1 APK 签名方案 v2 验证
+
+1. 找到“APK 签名分块”并验证以下内容：
+   1. “APK 签名分块”的两个大小字段包含相同的值。
+   2. “ZIP 中央目录结尾”紧跟在“ZIP 中央目录”记录后面。
+   3. “ZIP 中央目录结尾”之后没有任何数据。
+2. 找到“APK 签名分块”中的第一个“APK 签名方案 v2 分块”。如果 v2 分块存在，则继续执行第 3 步。否则，回退至[使用 v1 方案](https://source.android.google.cn/security/apksigning/v2?hl=zh-cn#v1-verification)验证 APK。
+3. 对“APK 签名方案 v2 分块”中的每个signer执行以下操作：
+   1. 从 `signatures` 中选择安全系数最高的受支持 `signature algorithm ID`。安全系数排序取决于各个实现/平台版本。
+   2. 使用 `public key` 并对照 `signed data` 验证 `signatures` 中对应的 `signature`。（现在可以安全地解析 `signed data` 了。）
+   3. 验证 `digests` 和 `signatures` 中的签名算法 ID 列表（有序列表）是否相同。（这是为了防止删除/添加签名。）
+   4. 使用签名算法所用的同一种摘要算法[计算 APK 内容的摘要](https://source.android.google.cn/security/apksigning/v2?hl=zh-cn#integrity-protected-contents)。
+   5. 验证计算出的摘要是否与 `digests` 中对应的 `digest` 一致。
+   6. 验证 `certificates` 中第一个 `certificate` 的 SubjectPublicKeyInfo 是否与 `public key` 相同。
+4. 如果找到了至少一个 `signer`，并且对于每个找到的 `signer`，第 3 步都取得了成功，APK 验证将会成功。
+
+接下来结合源码详细分析V2签名的验证流程。
 
 首先回到collectCertificates方法的开头，安装apk验证签名是默认先进行V2方案签名的，注意V2方案是Android 7.0之后引入的，也就是说，在Android 7.0之前只有V1签名方案验证，7.0及以后的版本默认先进行V2方案验证，如果apk没用V2方案对apk进行签名，则走V1签名验证流程。
 
@@ -1228,7 +1354,7 @@ private static X509Certificate[][] verify(RandomAccessFile apk)
 }
 ```
 
-#### 3.2.1 验证apk文件格式并获取签名块内容
+### 3.2.2 验证apk文件格式并获取签名块内容
 
 ```java
 private static SignatureInfo findSignature(RandomAccessFile apk)
@@ -1320,7 +1446,7 @@ private static ByteBuffer findApkSignatureSchemeV2Block(ByteBuffer apkSigningBlo
 当找不到时就会抛出异常SignatureNotFoundException，会使得系统认为apk没有使用V2签名，转而使用V1签名认证。
 到此，我们拿到了签名数据，然后再来看看最后一个verify方法是如何验证的呢。
 
-#### 3.2.2 认证流程
+### 3.2.3 认证流程
 
 [\frameworks\base\core\java\android\util\apk\ApkSignatureSchemeV2Verifier.java]
 
@@ -1408,7 +1534,7 @@ private static X509Certificate[] verifySigner(
             if (!isSupportedSignatureAlgorithm(sigAlgorithm)) {
                 continue;
             }
-            // 第一步： 找到算法等级最高的签名验证，也就是说，如果有多个算法签名apk，只验证算法等级最高的那个
+            // 第一步： 从signatures中选择安全系数最高的受支持 signature algorithm ID那个
             if ((bestSigAlgorithm == -1)
                     || (compareSignatureAlgorithm(sigAlgorithm, bestSigAlgorithm) > 0)) {
                 bestSigAlgorithm = sigAlgorithm;
@@ -1528,7 +1654,7 @@ private static X509Certificate[] verifySigner(
 
 1. 找到算法等级最高的签名验证
 
-   因为可以对同一个apk进行多次签名，因此可以有多个签名，但只对签名算法等级最高的签名进行验证。签名算法等级为：SHA512 > SHA256。因为V2签名不用SHA1签名，因此不需要比较SHA1。
+    从 `signatures` 中选择安全系数最高的受支持 `signature algorithm ID` 那个，算法等级为：SHA512 > SHA256。因为V2签名不用SHA1签名，因此不需要比较SHA1。
 
 2. 使用公钥验证签名信息
 
@@ -1540,7 +1666,7 @@ private static X509Certificate[] verifySigner(
 
 4. 取出signed data中的证书信息
 
-5. 验证证书身份和公钥是否为同一个身份
+5. 验证 `certificates` 中第一个 `certificate` 的 SubjectPublicKeyInfo 是否与 `public key` 相同。
 
 **(2) 验证摘要信息**
 
@@ -1613,7 +1739,7 @@ private static void verifyIntegrity(
 这个验证很简单，就是计算apk中的contents、CD、EoCD三个部分的真是摘要，与signed data中的原始摘要做对比，全部相同说明内容未被篡改，验证通过。
 至此，再加上新老apk的公钥身份的验证，就完成了V2签名的认证过程。
 
-#### 3.2.3 .V2签名方案验证总结
+### 3.2.4 .V2签名方案验证总结
 
 1. 7.0及以上系统，会直接尝试使用V2签名认证过程认证，如果检测apk文件没有使用V2签名方式或7.0一下系统，会直接使用V1签名认证过程，以便向后兼容。
 2. 检测apk文件的格式，包括contents区、CD区、EoCD区的存在性
@@ -1627,7 +1753,121 @@ private static void verifyIntegrity(
 1. 利用zip文件格式做签名数据的存储和验证，可以使得验证过程加快；使用分块方式对数据做摘要计算，加速了签名过程
 2. 对于全部原始内容区域做完整性保证，增加了完整性的保证
 
-## 4 APK签名方案总结
+# 4 APK 签名方案 v3
+
+Android 9 支持 [APK 密钥轮替](https://developer.android.google.cn/about/versions/pie/android-9.0?hl=zh-cn#apk-key-rotation)，这使应用能够在 APK 更新过程中更改其签名密钥。为了实现轮替，APK 必须指示新旧签名密钥之间的信任级别。为了支持密钥轮替，我们将 [APK 签名方案](https://source.android.google.cn/security/apksigning/v2?hl=zh-cn)从 v2 更新为 v3，以允许使用新旧密钥。v3 在 APK 签名分块中添加了有关受支持的 SDK 版本和 proof-of-rotation 结构的信息。
+
+## 4.1 APK 签名分块
+
+为了保持与 v1 APK 格式的向后兼容性，v2 和 v3 APK 签名存储在“APK 签名分块”内紧邻 ZIP Central Directory 前面。
+
+v3 APK 签名分块的格式[与 v2 相同](https://source.android.google.cn/security/apksigning/v2?hl=zh-cn#apk-signing-block-format)。APK 的 v3 签名会存储为一个“ID-值”对，其中 ID 为 0xf05368c0。
+
+## 4.2 APK 签名方案 v3 分块
+
+v3 方案的设计与 [v2 方案](https://source.android.google.cn/security/apksigning/v2?hl=zh-cn#apk-signature-scheme-v2-block)非常相似，它们采用相同的常规格式，并支持相同的[签名算法 ID](https://source.android.google.cn/security/apksigning/v2?hl=zh-cn#signature-algorithm-ids)、密钥大小和 EC 曲线。
+
+但是，v3 方案增添了有关受支持的 SDK 版本和 proof-of-rotation 结构的信息。
+
+**格式**
+
+“APK 签名方案 v3 分块”存储在“APK 签名分块”内，ID 为 `0xf05368c0`。
+
+“APK 签名方案 v3 分块”采用 v2 的格式：
+
+-  带长度前缀的 `signer`（带长度前缀）序列： 
+  -  带长度前缀的 `signed data`： 
+    -  带长度前缀的 `digests`（带长度前缀）序列： 
+      - `signature algorithm ID`（4 个字节）
+      - `digest`（带长度前缀）
+    - 带长度前缀的 X.509 certificates序列：
+      - 带长度前缀的 X.509 `certificate`（ASN.1 DER 格式）
+    - `minSDK` (uint32) - 如果平台版本低于此数字，则应忽略该签名者。
+    - `maxSDK` (uint32) - 如果平台版本高于此数字，则应忽略该签名者。
+    - 带长度前缀的additional attributes（带长度前缀）序列：
+      - `ID` (uint32)
+      - `value`（可变长度：附加属性的长度 - 4 个字节）
+      - `ID - 0x3ba06f8c`
+      - `value -` Proof-of-rotation 结构
+  - `minSDK` (uint32) - 签名数据部分中 minSDK 值的副本 - 用于在当前平台不在范围内时跳过对此签名的验证。必须与签名数据值匹配。
+  - `maxSDK` (uint32) - 签名数据部分中 maxSDK 值的副本 - 用于在当前平台不在范围内时跳过对此签名的验证。必须与签名数据值匹配。
+  - 带长度前缀的signatures（带长度前缀）序列：
+    - `signature algorithm ID` (uint32)
+    - `signed data` 带长度前缀的 `signature`
+  - 带长度前缀的 `public key`（SubjectPublicKeyInfo，ASN.1 DER 格式）
+
+## 4.3 Proof-of-rotation 和 self-trusted-old-certs 结构
+
+proof-of rotation 结构允许应用轮替其签名证书，而不会使这些证书在与这些应用通信的其他应用上被屏蔽。为此，应用签名包含两个新数据块：
+
+- 告知第三方应用的签名证书可信（只要其先前证书可信）的断言
+- 应用的旧签名证书（应用本身仍信任这些证书）
+
+签名数据部分中的 proof-of-rotation 属性包含一个单链表，其中每个节点都包含用于为之前版本的应用签名的签名证书。此属性旨在包含概念性 proof-of-rotation 和 self-trusted-old-certs 数据结构。该单链表按版本排序，最旧的签名证书对应于根节点。在构建 proof-of-rotation 数据结构时，系统会让每个节点中的证书为列表中的下一个证书签名，从而为每个新密钥提供证据来证明它应该像旧密钥一样可信。
+
+在构造 self-trusted-old-certs 数据结构时，系统会向每个节点添加标记来指示它在集合中的成员资格和属性。例如，可能存在一个标记，指示给定节点上的签名证书可信，可获得 Android 签名权限。此标记允许由旧证书签名的其他应用仍被授予由使用新签名证书签名的应用所定义的签名权限。由于整个 proof-of-rotation 属性都位于 v3 `signer` 字段的签名数据部分中，因此用于为所含 APK 签名的密钥会保护该属性。
+
+此格式排除了[多个签名密钥](https://source.android.google.cn/security/apksigning/v3?hl=zh-cn#multiple-certificates)的情况和将[不同祖先签名证书](https://source.android.google.cn/security/apksigning/v3?hl=zh-cn#multiple-ancestors)收敛到一个证书的情况（多个起始节点指向一个通用接收器）。
+
+**格式**
+
+proof-of-rotation 存储在“APK 签名方案 v3 分块”内，ID 为 `0x3ba06f8c`。其格式为：
+
+- 带长度前缀的levels（带长度前缀）序列：
+  - 带长度前缀的signed data（由上一个证书签名 - 如果存在）
+    - 带长度前缀的 X.509 `certificate`（ASN.1 DER 格式）
+    - `signature algorithm ID` (uint32) - 上一级证书使用的算法
+  - `flags` (uint32) - 这些标记用于指示此证书是否应该在 self-trusted-old-certs 结构中，以及针对哪些操作。
+  - `signature algorithm ID` (uint32) - 必须与下一级中的签名数据部分的 ID 一致。
+  - 上述 `signed data` 的带长度前缀的 `signature`
+
+**多个证书**
+
+Android 目前将使用多个证书签名的 APK 视为具有与所含证书不同的签名身份。因此，签名数据部分中的 proof-of-rotation 属性构成了一个有向无环图，最好将其视为单链表，其中给定版本的每组签名者都表示一个节点。这使得 proof-of-rotation 结构（下面的多签名者版本）更复杂。排序成为一个特别突出的问题。更重要的是，无法再单独为 APK 签名，因为 proof-of-rotation 结构必须让旧签名证书为新的证书集签名，而不是逐个签名。例如，如果希望由两个新密钥 B 和 C 签名的 APK 是由密钥 A 签名的，则它不能让 B 签名者仅包含 A 或 B 的签名，因为这是与 B 和 C 不同的签名身份。这意味着签名者必须在构建此类结构之前进行协调。
+
+**多个签名者 proof-of-rotation 属性**
+
+- 带长度前缀的sets（带长度前缀）序列：
+  - signed data（由上一组证书签名 - 如果存在）
+    - 带长度前缀的certificates序列
+      - 带长度前缀的 X.509 `certificate`（ASN.1 DER 格式）
+    - `signature algorithm IDs `(uint32) 序列 - 上一组证书中的每个证书对应一个序列，且采用相同顺序。
+  - `flags `(uint32) - 这些标记用于指示这组证书是否应该在 self-trusted-old-certs 结构中，以及针对哪些操作。
+  - 带长度前缀的signatures（带长度前缀）序列：
+    - `signature algorithm ID` (uint32) - 必须与签名数据部分中的相应 ID 一致
+    - 上述 `signed data` 带长度前缀的 `signature`
+
+**proof-of-rotation 结构中有多个祖先**
+
+v3 方案也无法处理两个不同密钥轮替到同一个应用的同一签名密钥的情形。这不同于收购情形，在收购情形中，收购公司希望转移收购的应用以使用其签名密钥来共享权限。收购被视为受支持的用例，因为新应用将通过其软件包名称来区分，并且可以包含自己的 proof-of-rotation 结构。不受支持的用例是，同一应用有两个不同的路径指向相同的证书，这打破了在密钥轮替设计中做出的许多假设。
+
+**验证**
+
+在 Android 9 及更高版本中，可以根据 APK 签名方案 v3、v2 或 v1 验证 APK。较旧的平台会忽略 v3 签名并尝试验证 v2 签名，然后验证 v1。
+
+![APK 签名验证过程](https://source.android.google.cn/security/images/apk-validation-process.png?hl=zh-cn)
+
+## 4.4 APK 签名方案 v3 验证
+
+1. 找到“APK 签名分块”并验证以下内容：
+   1. “APK 签名分块”的两个大小字段包含相同的值。
+   2. “ZIP 中央目录结尾”记录紧跟在“ZIP 中央目录”后面。
+   3. “ZIP 中央目录结尾”之后没有任何数据。
+2. 找到“APK 签名分块”中的第一个“APK 签名方案 v3 分块”。 如果 v3 分块存在，则继续执行第 3 步。否则，回退至[使用 v2 方案](https://source.android.google.cn/security/apksigning/v2?hl=zh-cn#v2-verification)验证 APK。
+3. 对“APK 签名方案 v3 分块”中的每个signer（最低和最高 SDK 版本在当前平台的范围内）执行以下操作：
+   1. 从 `signatures` 中选择安全系数最高的受支持 `signature algorithm ID`。安全系数排序取决于各个实现/平台版本。
+   2. 使用 `public key` 并对照 `signed data` 验证 `signatures` 中对应的 `signature`。（现在可以安全地解析 `signed data` 了。）
+   3. 验证签名数据中的最低和最高 SDK 版本是否与为 `signer` 指定的版本匹配。
+   4. 验证 `digests` 和 `signatures` 中的签名算法有序 ID 列表是否相同。（这是为了防止删除/添加签名。）
+   5. 使用签名算法所用的同一种摘要算法[计算 APK 内容的摘要](https://source.android.google.cn/security/apksigning/v2?hl=zh-cn#integrity-protected-contents)。
+   6. 验证计算出的摘要是否与 `digests` 中对应的 `digest` 一致。
+   7. 验证 `certificates` 中第一个 `certificate` 的 SubjectPublicKeyInfo 是否与 `public key` 相同。
+   8. 如果 `signer` 存在 proof-of-rotation 属性，则验证结构是否有效，以及此 `signer` 是否为列表中的最后一个证书。
+4. 如果在当前平台范围内仅找到了一个 `signer`，并且对该 `signer` 成功执行第 3 步，则验证成功。
+
+**注意**：如果第 3 步或第 4 步失败，则不得使用 v1 或 v2 方案验证 APK。
+
+# 5 APK签名方案总结
 
  Android的应用程序apk的签名是用来确保apk来源的真实性以及apk没有被第三方篡改，目前有两种签名方案：V1和V2。
 
