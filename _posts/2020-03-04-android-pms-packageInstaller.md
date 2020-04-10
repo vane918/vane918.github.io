@@ -486,7 +486,7 @@ private boolean isInstallRequestFromUnknownSource(Intent intent) {
 
 由上面的代码可以知道，如果安装apk的发起者是特权app，那么是不需要授权”安装未知来源的应用“的。如果发起安装apk请求的apk不是特权app，而且系统还没对其授权”安装未知来源的应用“，则会弹出权限申请界面，如下图所示：
 
-![unknown-source-perm](images/pms/packageInstaller/unknown-source-perm.png)
+![unknown-source-perm](/images/pms/packageInstaller/unknown-source-perm.png)
 
 如果权限检测通过，则会调用initiateInstall准备安装apk。
 
@@ -525,7 +525,7 @@ private void initiateInstall() {
 
 最后到了确认安装界面，如下图所示：
 
-![ask-install](images/pms/packageInstaller/ask-install.png)
+![ask-install](/images/pms/packageInstaller/ask-install.png)
 
 ### 3.5 小节总结
 
@@ -758,7 +758,7 @@ protected void onCreate(@Nullable Bundle savedInstanceState) {
 
 点击安装后显示正在安装的界面如下：
 
-![installing-apk](images/pms/packageInstaller/installing-apk.png)
+![installing-apk](/images/pms/packageInstaller/installing-apk.png)
 
 Apk的安装是交由Session来进行的，而且任何一个应用都可以创建这样的Session。SessionParams是用来创建Session的参数，这个参数保存了apk的一些信息，诸如进度，图标。根据SessionParams生成安装该应用的sessionId，同时PackageInstallerService会保存该sessionId。接着我们分析onResume的代码。 
 
@@ -1136,6 +1136,6 @@ apk安装失败的逻辑也很简单：将状态代码返回给调用方或者�
 
 上面的流程如下面的流程图所示：
 
-![preapare-apk](images/pms/packageInstaller/preapare-apk.png)
+![preapare-apk](/images/pms/packageInstaller/preapare-apk.png)
 
-![apk-installing](images/pms/packageInstaller/apk-installing.png)
+![apk-installing](/images/pms/packageInstaller/apk-installing.png)

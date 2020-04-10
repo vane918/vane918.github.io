@@ -27,7 +27,7 @@ tags:
 
 在PMS模块中，核心的几个数据结构类关系图如下：
 
-![pms-structure](images/pms/pms/pms-structure.png)
+![pms-structure](/images/pms/pms/pms-structure.png)
 
 -  PackageParser.Package对应一个apk完整的原始数据 ， 对应的packages.xml文件里面的<package>标签。  其mExtras变量指向PackageSetting对象。
 -  PackageSetting包含一个PackageParser.Package对象实例，它还包括apk相关配置数据，比如apk内部哪些component是被disable等。 
@@ -59,7 +59,7 @@ APK涉及到的文件如下：
 
 先上一个installStage的流程图：
 
-![installStage](images/pms/pms/installStage.png)
+![installStage](/images/pms/pms/installStage.png)
 
 ```java
 void installStage(String packageName, File stagedDir, String stagedCid,
@@ -802,7 +802,7 @@ private int installLocationPolicy(PackageInfoLite pkgLite) {
 
 该方法是根据策略来决定apk安装的位置，流程图：
 
-![install-location](images/pms/pms/install-location.png)
+![install-location](/images/pms/pms/install-location.png)
 
 #### 3.5.3 创建InstallArgs类createInstallArgs
 
@@ -2681,5 +2681,5 @@ break;
 
 详细的流程图如下：
 
-![third-app-install-apk](images/pms/pms/third-app-install-apk.png)
+![third-app-install-apk](/images/pms/pms/third-app-install-apk.png)
 

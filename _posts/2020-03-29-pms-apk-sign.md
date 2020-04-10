@@ -73,13 +73,13 @@ tags:
 需要注意的是，Apk的证书通常的自签名的，也就是由开发者自己制作，没有向CA机构申请。Android在安装Apk时并没有校验证书本身的合法性，只是从证书中提取公钥和加密算法，这也正是对第三方Apk重新签名后，还能够继续在没有安装这个Apk的系统中继续安装的原因。
 完整的签名和校验过程如下：（图片来源：[维基百科](https://upload.wikimedia.org/wikipedia/commons/2/2b/Digital_Signature_diagram.svg)） 
 
-![sign-verify](images/pms/apk-sign/sign-verify.png)
+![sign-verify](/images/pms/apk-sign/sign-verify.png)
 
 ### 1.4 ZIP文件结构
 
 apk也是一个zip文件，zip文件的结构如下：
 
-![zip](images/pms/apk-sign/zip.png)
+![zip](/images/pms/apk-sign/zip.png)
 
 zip文件分为3部分：
 
@@ -133,7 +133,7 @@ keystore使用的证书标准是X.509，X.509标准也有多种编码格式，�
 
   使用下面的指令解析platform.x509.pem得到以下信息：
 
-![platform.x509](images/pms/apk-sign/platform.x509.png)
+![platform.x509](/images/pms/apk-sign/platform.x509.png)
 
 ### 1.6 V1和V2签名
 
@@ -331,9 +331,9 @@ SHA1-Digest: XXaSktKiWqcfhbVCAylwxGU9L2s=
 
 采用openssl pkcs7 -inform DER -in CERT.RSA -noout -print_certs -print -text查看：
 
-![RSA-1](images/pms/apk-sign/RSA-1.PNG)
+![RSA-1](/images/pms/apk-sign/RSA-1.PNG)
 
-![RSA-2](images/pms/apk-sign/RSA-2.PNG)
+![RSA-2](/images/pms/apk-sign/RSA-2.PNG)
 
 包含了公钥 public_key、签名signature和摘要加密enc_digest等信息。
 
@@ -380,7 +380,7 @@ v2 签名将验证apk中的所有字节，而不是单个 ZIP 条目，因此，
 
  V2方案为加强数据完整性保证，不在数据区和中央目录中插入数据，选择在 数据区和中央目录 之间插入一个APK签名分块，存储了签名，摘要，签名算法，证书链，额外属性等信息，从而保证了原始zip（apk）数据的完整性。具体如下所示： 
 
-![v2](images/pms/apk-sign/v2.png)
+![v2](/images/pms/apk-sign/v2.png)
 
 为了保护 APK 内容，整个 apk（ZIP 文件格式）被分为以下 4 个区块：
 
@@ -410,7 +410,7 @@ v2 签名将验证apk中的所有字节，而不是单个 ZIP 条目，因此，
 - `size of block`，以字节数计 - 与第一个字段相同 (uint64)
 - `magic`“APK 签名分块 42”（16 个字节）
 
-![find-v2](images/pms/apk-sign/find-v2.png)
+![find-v2](/images/pms/apk-sign/find-v2.png)
 
 在解析 APK 时，首先要通过以下方法找到“ZIP 中央目录”的起始位置：在文件末尾找到“ZIP 中央目录结尾”记录，然后从该记录中读取“中央目录”的起始偏移量。通过 `magic` 值，可以快速确定“中央目录”前方可能是“APK 签名分块”。然后，通过 `size of block` 值，可以高效地找到该分块在文件中的起始位置。
 
@@ -442,7 +442,7 @@ APK 签名方案 v2分块是一个签名序列，说明可以使用多个签名�
 
 - 证书公钥
 
-![V2-sign](images/pms/apk-sign/V2-sign.png)
+![V2-sign](/images/pms/apk-sign/V2-sign.png)
 
 “APK 签名方案 v2 分块”存储在“APK 签名分块”内，ID 为 `0x7109871a`。
 
@@ -473,7 +473,7 @@ Android 平台支持上述所有签名算法。签名工具可能只支持其中
 3. ZIP 中央目录
 4. ZIP 中央目录结尾
 
-![v2](images/pms/apk-sign/v2.png)
+![v2](/images/pms/apk-sign/v2.png)
 
 APK 签名方案 v2 负责保护第 1、3、4 部分的完整性，以及第 2 部分包含的“APK 签名方案 v2 分块”中的 `signed data` 分块的完整性。
 
@@ -489,7 +489,7 @@ APK 签名方案 v2 负责保护第 1、3、4 部分的完整性，以及第 2 �
    字节 0x5a + chunk数 + 块的摘要的连接（按块在 APK 中的顺序）进行计算。
    这里要注意的是：中央目录结尾记录中包含了中央目录的起始偏移量，插入APK签名分块后，中央目录的起始偏移量将发生变化。故在校验签名计算摘要时，需要把中央目录的起始偏移量当作APK签名分块的起始偏量。
 
-![v2-digest](images/pms/apk-sign/v2-digest.png)
+![v2-digest](/images/pms/apk-sign/v2-digest.png)
 
 #### 2.2.6 防回滚保护
 
@@ -1278,7 +1278,7 @@ V1签名方案概括如下：
 
 由APK的V2签名方案可知， 签名数据会存放到apk文件的单独区块内，那么安装时系统对于V2签名是如何验证的呢？  在 Android 7.0 及更高版本中，可以根据 APK 签名方案 v2+ 或 JAR 签名（v1 方案）验证 APK。更低版本的平台会忽略 v2 签名，仅验证 v1 签名。 
 
-![v1v2](images/pms/apk-sign/v1v2.png)
+![v1v2](/images/pms/apk-sign/v1v2.png)
 
 #### 3.2.1 APK 签名方案 v2 验证
 
