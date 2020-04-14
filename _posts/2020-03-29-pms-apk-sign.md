@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "安卓PMS模块之APK签名及验证流程"
+title:  "安卓PMS模块之APK签名及验证流程(2)"
 date:   2020-03-29 00:00:00
 catalog:  true
 tags:
