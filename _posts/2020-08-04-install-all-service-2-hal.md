@@ -166,7 +166,7 @@ struct operatechar_device_t {
     struct hw_device_t common;
     int fd;
     int (*close)(void);
-    int (*read)(struct operatechar_device_t* dev, char* buffer);
+    int (*read)(struct operatechar_device_t* dev, char* buffer, int length);
     int (*write)(struct operatechar_device_t* dev, char* buffer);
 };
 
@@ -208,7 +208,7 @@ static int operatechar_close(struct hw_device_t* dev);
 
 /*设备读写操作*/
 static int operatechar_write(struct operatechar_device_t* dev, char* buffer);
-static int operatechar_read(struct operatechar_device_t* dev, char* buffer);
+static int operatechar_read(struct operatechar_device_t* dev, char* buffer, int length);
 
 static int operatechar_open(const struct hw_module_t* module, const char* id, struct hw_device_t** device)
 {
@@ -257,14 +257,13 @@ static int operatechar_write(struct operatechar_device_t* dev, char* buffer)
         D("Null device pointer.");
         return -EFAULT;
     }
-    D("OPERATECHAR HW - write()for %d bytes called", sizeof(*buffer));
-    write(dev->fd, buffer, sizeof(*buffer));
+    write(dev->fd, buffer, strlen(buffer));
     D("write data to driver: %s", buffer);
     return 0;
 }
 
 /*读取/dev/mychar的数据*/
-static int operatechar_read(struct operatechar_device_t* dev, char* buffer)
+static int operatechar_read(struct operatechar_device_t* dev, char* buffer, int length)
 {
     if(!dev) {
         D("Null device pointer.");
@@ -274,17 +273,17 @@ static int operatechar_read(struct operatechar_device_t* dev, char* buffer)
         D("Null buffer pointer.");
         return -EFAULT;
     }
-
-    read(dev->fd, buffer, sizeof(*buffer));
+    int retval;
+    retval = read(dev->fd, buffer, length);
     D("read data from driver: %s", buffer);
-    return 0;
+    return retval;
 }
 
 static struct hw_module_methods_t operatechar_module_methods = {
     .open = operatechar_open,
 };
 
-struct hw_module_t HAL_MODULE_INFO_SYM = {
+struct opetatechar_module_t HAL_MODULE_INFO_SYM = {
     common: {
         .tag = HARDWARE_MODULE_TAG,
         .version_major = 1,
