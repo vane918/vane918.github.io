@@ -24,57 +24,57 @@ tags:
 
    每个server进程在注册的时候，首先往本地进程的内核空间的 Binders 红黑树插入 Binder 实体服务的 bind_node 节点，然后会在 ServiceManager 进程的内核空间为其添加引用 ref 结构体， ref会保存相应的信息，如名字、ptr地址等。
 
-2.  Client如何找到 Server，并且向其发送请求
+2. Client如何找到 Server，并且向其发送请求
 
    Client 在 getService 的时候，ServiceManager 会找到 Server 的 node 节点，并在 Client 中创建 Server 的 bind_ref 引用，Client 可以在自己进程的内核空间中找到该引用，最终获取 Server 的 bind_node 节点，直接访问 Server，传输数据并唤醒。 
 
-3.  Client 端，Server 实体的引用 bind_ref 存在哪里 
+3. Client 端，Server 实体的引用 bind_ref 存在哪里 
 
    Binder 驱动会在内核空间为打开 Binder 设备的进程（包括 Client 及 Server 端）创建 bind_proc 结构体，bind_proc包含4棵红黑树：threads、bind_refs、bind_nodes、bind_desc 这四棵树分别记录该进程的线程树、Binder 引用树、本地 Binder 实体，等信息，方便本地查找 。
 
-4.  如何唤醒目标进程或者线程
+4. 如何唤醒目标进程或者线程
 
    每个 Binder 进程或者线程在内核中都设置了自己的等待队列，Client 将目标进程或者线程告诉 Binder 驱动，驱动负责唤醒挂起在等待队列上的线程或者进程。 
 
-5.  Server 如何找到返回目标进程或者线程
+5. Server 如何找到返回目标进程或者线程
 
-    Client 在请求的时候，会在 bind_trasaction 的 from 中添加请求端信息 
+   Client 在请求的时候，会在 bind_trasaction 的 from 中添加请求端信息 
 
-6.  Binder 节点与 ref 节点的添加时机是什么
+6. Binder 节点与 ref 节点的添加时机是什么
 
    驱动中存在一个 TYPE_BINDER 与 TYPR_HANDLE 的转换，Binder 节点是 Binder Server 进程（一般是 Native 进程）在向 Servicemanager 注册时候添加的，而 ref 是 Client 在 getService 的时候添加的，并且是由 ServiceManager 添加的。 
 
-7.   Binder 如何实现只拷贝一次
+7. Binder 如何实现只拷贝一次
 
    传统的 IPC 通信方式 一次数据传递需要经历：内存缓存区 --> 内核缓存区 --> 内存缓存区，需要 2 次数据拷贝 。 Binder IPC 机制 Binder IPC 正是基于内存映射（mmap）来实现的 ，mmap() 是操作系统中一种内存映射的方法。内存映射简单的讲就是将用户空间的一块内存区域映射到内核空间。映射关系建立后，用户对这块内存区域的修改可以直接反应到内核空间；反之内核空间对这段区域的修改也能直接反应到用户空间。Binder 驱动使用 mmap() 并不是为了在物理介质和用户空间之间建立映射，而是用来在内核空间创建数据接收的缓存空间。 一次完整的 Binder IPC 通信过程通常是这样： 
 
    1. Binder 驱动在内核空间创建一个数据接收缓存区；
-   2.  在内核空间开辟一块内核缓存区，建立内核缓存区和内核中数据接收缓存区之间的映射关系，以及内核中数据接收缓存区和接收进程用户空间地址的映射关系； 
+   2. 在内核空间开辟一块内核缓存区，建立内核缓存区和内核中数据接收缓存区之间的映射关系，以及内核中数据接收缓存区和接收进程用户空间地址的映射关系； 
    3. 发送方进程通过系统调用 copy*from*user() 将数据 copy 到内核中的内核缓存区，由于内核缓存区和接收进程的用户空间存在内存映射，因此也就相当于把数据发送到了接收进程的用户空间，这样便完成了一次进程间的通信。
 
    ![IPC](/images/binder/IPC.png)
 
    ![binder-IPC](/images/binder/binder-IPC.png)
 
-8.  Binder Server都会在ServiceManager中注册吗
+8. Binder Server都会在ServiceManager中注册吗
 
    Java 层的 Binder 实体就不会去 ServiceManager，尤其是 bindService 这样一种，其实是 ActivityManagerService 充当了 ServiceManager 的角色
 
-9.  IPCThreadState::joinThreadPool 的真正意义是什么
+9. IPCThreadState::joinThreadPool 的真正意义是什么
 
    可以理解加入该进程内核的线程池，进行循环，多个线程开启，其实一个就可以，怕处理不过来，可以开启多个线程处理起来，其实跟线程池类似。 
 
-10.  为何 ServiceManager 启动的时候没有采用 joinThreadPool，而是自己通过for循环来实现自己 Loop
+10. 为何 ServiceManager 启动的时候没有采用 joinThreadPool，而是自己通过for循环来实现自己 Loop
 
     因为 Binder 环境还没准备好，所以自己控制，所以也没有 talkWithDriver 那套逻辑，不用 onTransact 实现。在binder_transaction 中，会对目标是 ServiceManager 的请求进行特殊处理。 
 
 11. ServiceManager 是由谁启动的
 
-     init 进程在init.rc中启动。
+    init 进程在init.rc中启动。
 
 12. ServiceManager 如何成为系统 Server 的大管家
 
-     servicemanager  主要做了以下几件事情：
+    servicemanager  主要做了以下几件事情：
 
     1.  调用函数 binder_open 打开设备文件 /dev/binder 并使用 mmap 将其映射到调用者进程的地址空间中；
     2.  调用 binder_become_context_manager 将自己注册为 Binder 进程间通信机制的上下文管理者；
@@ -124,12 +124,12 @@ tags:
     在 Activity 之间传输 BitMap 的时候，如果 Bitmap 过大，就会引起问题，比如崩溃等，这其实就跟 Binder 传输数据大小的限制有关系，在拷贝映射过程中，mmap 函数会为 Binder 数据传递映射一块连续的虚拟地址，这块虚拟内存空间其实是有大小限制的，不同的进程可能还不一样：
 
     - 普通的由Zygote孵化而来的用户进程，所映射的 Binder 内存大小是不到1M的，准确说是**1M-8K**。这个限制定义在ProcessState类中，如果传输数据超过这个大小，系统就会报错，因为 Binder 本身就是为了进程间频繁而灵活的通信所设计的，并不是为了拷贝大数据而使用的。
-    -  而在内核中，其实也有个限制，是4M，不过由于APP中已经限制了不到1M，这里的限制似乎也没多大用途。
+    - 而在内核中，其实也有个限制，是4M，不过由于APP中已经限制了不到1M，这里的限制似乎也没多大用途。
     - ServiceManager 进程，它为自己申请的 Binder 内核空间是128K，这个同 ServiceManager 的用途是分不开的，ServcieManager 主要面向系统 Service，只是简单的提供一些 addServcie，getService 的功能，不涉及多大的数据传输，因此不需要申请多大的内存。
 
-17.  Binder 内存限制是1m-8k, 为什么一次调用最大传输数据只有大约508k? 
+17. Binder 内存限制是1m-8k, 为什么一次调用最大传输数据只有大约508k
 
-     Binder 的线程池数量默认是15个，由15个线程共享这 1MB-8KB 的内存空间，所以实际传输大小并没有那么大 
+    Binder 的线程池数量默认是15个，由15个线程共享这 1MB-8KB 的内存空间，所以实际传输大小并没有那么大 
 
 18. 系统服务与 bindService 等启动的服务的区别
 
@@ -249,72 +249,69 @@ tags:
 
     这种机制可能也会影响 Service 的性能，比如同一个线程中的 Client 请求的服务是一个耗时操作的时候，通过 oneway 的方式发送请求的话，如果之前的请求还没被执行完，则 Service 不会启动新的线程去响应，该请求线程的所有操作都会被放到同一个Binder线程中依次执行，这样其实没有利用Binder机制的动态线程池，如果是多个线程中的 Client 并发请求，则还是会动态增加 Binder 线程的，大概这个是为了保证同一个线程中的 Binder 请求要依次执行吧，这种表现好像是反过来了，Client 异步，而 Service 阻塞了，也就是说虽然解决了 Client 请求不被阻塞的问题，但是请求的处理并未被加速。
 
-25. Binder协议中BC与BR的区别
+24. Binder协议中BC与BR的区别
 
     BC与BR主要是标记数据及 Transaction 流向，其中BC是从用户空间流向内核，而BR是从内核流线用户空间，比如Client 向 Server 发送请求的时候，用的是 BC_TRANSACTION，当数据被写入到目标进程后，target_proc 所在的进程被唤醒，在内核空间中，会将BC转换为BR，并将数据与操作传递该用户空间。
 
-26. Binder 在传输数据的时候是如何层层封装的--不同层次使用的数据结构（命令的封装）
+25. Binder 在传输数据的时候是如何层层封装的--不同层次使用的数据结构（命令的封装）
 
     ![binder-data](/images/binder/binder-data.jpg) 
 
-27. ServiceManager addService的限制--并非所有服务都能通过addService添加到ServiceManager
-ServiceManager 其实主要的面向对象是系统服务，大部分系统服务都是由 SystemServer 进程总添加到ServiceManager 中去的，在通过 ServiceManager 添加服务的时候，是有些权限校验的，源码如下：
+26. ServiceManager addService的限制
 
-```cpp
-int svc_can_register(unsigned uid, uint16_t *name)
- {
-    unsigned n;
-    // 谁有权限add_service 0进程，或者 AID_SYSTEM进程
-    if ((uid == 0) || (uid == AID_SYSTEM))
-        return 1;
-     for (n = 0; n < sizeof(allowed) / sizeof(allowed[0]); n++)
-        if ((uid == allowed[n].uid) && str16eq(name, allowed[n].name))
+    1. ServiceManager 其实主要的面向对象是系统服务，大部分系统服务都是由 SystemServer 进程总添加到ServiceManager 中去的，在通过 ServiceManager 添加服务的时候，是有些权限校验的，源码如下：
+
+    ```cpp
+    int svc_can_register(unsigned uid, uint16_t *name)
+     {
+        unsigned n;
+        // 谁有权限add_service 0进程，或者 AID_SYSTEM进程
+        if ((uid == 0) || (uid == AID_SYSTEM))
             return 1;
-    return 0;
-}
-```
+         for (n = 0; n < sizeof(allowed) / sizeof(allowed[0]); n++)
+            if ((uid == allowed[n].uid) && str16eq(name, allowed[n].name))
+                return 1;
+        return 0;
+    }
+    ```
 
-可以看到 (uid == 0) 或者 (uid == AID_SYSTEM)的进程都是可以添加服务的，uid=0，代表root用户，而uid=AID_SYSTEM，代表系统用户    。或者是一些特殊的配置进程。SystemServer 进程在被 Zygote 创建的时候，就被分配了 UID 是 AID_SYSTEM（1000）
+    可以看到 (uid == 0) 或者 (uid == AID_SYSTEM)的进程都是可以添加服务的，uid=0，代表root用户，而uid=AID_SYSTEM，代表系统用户    。或者是一些特殊的配置进程。SystemServer 进程在被 Zygote 创建的时候，就被分配了 UID 是 AID_SYSTEM（1000）
 
-```java
-private static boolean startSystemServer()
-        throws MethodAndArgsCaller, RuntimeException {
-/* Hardcoded command line to start the system server */
-    String args[] = {
-        "--setuid=1000",
-        "--setgid=1000",
-        "--setgroups=1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1018,3001,3002,3003,3006,3007",
-        "--capabilities=130104352,130104352",
-        "--runtime-init",
-        "--nice-name=system_server",
-        "com.android.server.SystemServer",
-    };
-```
+    ```java
+    private static boolean startSystemServer()
+            throws MethodAndArgsCaller, RuntimeException {
+    /* Hardcoded command line to start the system server */
+        String args[] = {
+            "--setuid=1000",
+            "--setgid=1000",
+            "--setgroups=1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1018,3001,3002,3003,3006,3007",
+            "--capabilities=130104352,130104352",
+            "--runtime-init",
+            "--nice-name=system_server",
+            "com.android.server.SystemServer",
+        };
+    ```
 
-Android 每个 APP 的 UID，都是不同的，用了Linux的UID那一套，但是没完全沿用，这里不探讨，总之，普通的进程是没有权限注册到 ServiceManager 中的，那么 APP 平时通过 bindService 启动的服务怎么注册于查询的呢？接管这个任务的就是 SystemServer 的 ActivityManagerService。
+    Android 每个 APP 的 UID，都是不同的，用了Linux的UID那一套，但是没完全沿用，这里不探讨，总之，普通的进程是没有权限注册到 ServiceManager 中的，那么 APP 平时通过 bindService 启动的服务怎么注册于查询的呢？接管这个任务的就是 SystemServer 的 ActivityManagerService。
 
-27. bindService 启动 Service 与 Binder 服务实体的流程 （ActivityManagerService）
+27. bindService 启动 Service 与 Binder 服务实体的流程
 
-    1、Activity 调用bindService：通过 Binder 通知 ActivityManagerService，要启动哪个 Service
+    1. Activity 调用bindService：通过 Binder 通知 ActivityManagerService，要启动哪个 Service
+    2. ActivityManagerService 创建 ServiceRecord，并利用 ApplicationThreadProxy 回调，通知 APP 新建并启动Service启动起来
+    3. ActivityManagerService 把 Service 启动起来后，继续通过 ApplicationThreadProxy，通知 APP，bindService，其实就是让 Service 返回一个 Binder 对象给 ActivityManagerService，以便 AMS 传递给 Client
+    4. ActivityManagerService 把从 Service 处得到这个 Binder 对象传给 Activity，这里是通过 IServiceConnection binder 实现。
+    5. Activity 被唤醒后通过 Binder Stub 的 asInterface 函数将 Binder 转换为代理 Proxy，完成业务代理的转换，之后就能利用 Proxy 进行通信了。
 
-    2、ActivityManagerService 创建 ServiceRecord，并利用 ApplicationThreadProxy 回调，通知 APP 新建并启动Service启动起来
-
-    3、ActivityManagerService 把 Service 启动起来后，继续通过 ApplicationThreadProxy，通知 APP，bindService，其实就是让 Service 返回一个 Binder 对象给 ActivityManagerService，以便 AMS 传递给 Client
-
-    4、ActivityManagerService 把从 Service 处得到这个 Binder 对象传给 Activity，这里是通过 IServiceConnection binder 实现。
-
-    5、Activity 被唤醒后通过 Binder Stub 的 asInterface 函数将 Binder 转换为代理 Proxy，完成业务代理的转换，之后就能利用 Proxy 进行通信了。
-
-29. Binder 通信过程
+28. Binder 通信过程
 
     1. 首先，一个进程使用 BINDER*SET*CONTEXT_MGR 命令通过 Binder 驱动将自己注册成为 ServiceManager；
     2. Server 通过驱动向 ServiceManager 中注册 Binder（Server 中的 Binder 实体），表明可以对外提供服务。驱动为这个 Binder 创建位于内核中的实体节点以及 ServiceManager 对实体的引用，将名字以及新建的引用打包传给 ServiceManager，ServiceManger 将其填入查找表。
     3. Client 通过名字，在 Binder 驱动的帮助下从 ServiceManager 中获取到对 Binder 实体的引用，通过这个引用就能实现和 Server 进程的通信。
 
-30. Binder 通信中的代理模式
+29. Binder 通信中的代理模式
 
      A 进程想要 B 进程中某个对象（object）是如何实现的呢？毕竟它们分属不同的进程，A 进程 没法直接使用 B 进程中的 object。 
 
     前面我们介绍过跨进程通信的过程都有 Binder 驱动的参与，因此在数据流经 Binder 驱动的时候驱动会对数据做一层转换。当 A 进程想要获取 B 进程中的 object 时，驱动并不会真的把 object 返回给 A，而是返回了一个跟 object 看起来一模一样的代理对象 objectProxy，这个 objectProxy 具有和 object 一摸一样的方法，但是这些方法并没有 B 进程中 object 对象那些方法的能力，这些方法只需要把把请求参数交给驱动即可。对于 A 进程来说和直接调用 object 中的方法是一样的。
 
-    当 Binder 驱动接收到 A 进程的消息后，发现这是个 objectProxy 就去查询自己维护的表单，一查发现这是 B 进程 object 的代理对象。于是就会去通知 B 进程调用 object 的方法，并要求 B 进程把返回结果发给自己。当驱动拿到 B 进程的返回结果后就会转发给 A 进程，一次通信就完成了。
+    当 Binder 驱动接收到 A 进程的消息后，发现这是个 objectProxy 就去查询自己维护的表单，一查发现这是 B 进程 object 的代理对象。于是就会去通知 B 进程调用 object 的方法，并要求 B 进程把返回结果发给自己。当驱动拿到 B 进程的返回结果后就会转发给 A 进程，一次通信就完成了
