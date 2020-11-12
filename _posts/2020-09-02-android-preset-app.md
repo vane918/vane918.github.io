@@ -411,7 +411,9 @@ LOCAL_MULTILIB := 32
 虽然目前为止能够解决了在64位设备上调用32位的so库，但是在运行时报出java.lang.UnsatisfiedLinkError: JNI_ERR returned from JNI_OnLoad错误。
 熟悉C的人看到这种错误肯定很熟悉, 是因为库的参数不兼容或者调用这传入的参数和.so中的参数不匹配导致的。Android有一个压缩优化的属性可供配置：
 
+```
 LOCAL_PROGUARD_ENABLED := disabled 禁用混淆
 LOCAL_DEX_PREOPT := false  关闭优化
+```
 
-而android源码中默认是打开LOCAL_DEX_PREOPT属性的, 优化了so文件, 导致so库里面的jni函数接口产生了变化, 于是就出现了上面的错误.。关闭优化，将SELinux权限问题处理掉, 终于可以正常使用了。
+而android源码中默认是打开LOCAL_DEX_PREOPT属性的, 优化了so文件, 导致so库里面的jni函数接口产生了变化, 于是就出现了上面的错误.。关闭优化，终于可以正常使用了。
