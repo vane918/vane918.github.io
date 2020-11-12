@@ -152,7 +152,6 @@ make snod
 ### 引用第三方 jar 包
 
 假设，我们当前目录下的 libs 有 AndroidUtil.jar包，我们想引用它，需要做两个步骤：
-
 第一步、 声明我们 jar 包所在的目录
 
 ```makefile
@@ -185,7 +184,6 @@ include $(BUILD_PACKAGE)
 libs/Android.mk
 
 ```makefile
-#====================================================
 include $(CLEAR_VARS)
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_SUFFIX := .so
@@ -196,9 +194,7 @@ LOCAL_SRC_FILES_arm64 :=libs/arm64-v8a/$(LOCAL_MODULE).so
 LOCAL_MODULE_TARGET_ARCHS:= arm arm64
 LOCAL_MULTILIB := both
 include $(BUILD_PREBUILT)
-#====================================================
 
-#====================================================
 include $(CLEAR_VARS)
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_SUFFIX := .so
@@ -216,7 +212,7 @@ include $(BUILD_PREBUILT)
 ```makefile
 include $(CLEAR_VARS)
 # 省略其他
-LOCAL_JNI_SHARED_LIBRARIES :=  \
+LOCAL_JNI_SHARED_LIBRARIES +=  \
 		libBaiduMapSDK1 \
 		libBaiduMapSDK2
 # 省略其他
@@ -264,7 +260,7 @@ LOCAL_STATIC_ANDROID_LIBRARIES := \
 LOCAL_STATIC_JAVA_LIBRARIES := \
 		AndroidUtil
 
-LOCAL_JNI_SHARED_LIBRARIES :=  \
+LOCAL_JNI_SHARED_LIBRARIES +=  \
 		libBaiduMapSDK1 \
 		libBaiduMapSDK2
 
@@ -300,7 +296,6 @@ include $(LOCAL_PATH)/libs/Android.mk
 
 LOCAL_PRIVATE_PLATFORM_APIS := true
 设置后，会使用 sdk 的 hide 的 api 来编译。
-
 LOCAL_SDK_VERSION 这个编译配置，就会使编译的应用不能访问 hide 的 api，有时一些系统的 class 被 import 后编译时说找不到这个类，就是这个原因造成的。
 
 **2、如果直接用 mmm 编译然后 adb install -r xxx.apk 大概会出现如下错误：**
@@ -322,5 +317,101 @@ LOCAL_DEX_PREOPT := false
 **3、在 Android Studio Gradle 方式中通过 implementation 方式加载的三方库，并没有下载 jar 文件放到 libs 文件夹下啊，该如何集成？**
 
 其实 jar 包有被下载到项目的 External Libraries 目录下，找到引用的 jar 包，点右键 Show in Files，就能得到了 jar 包的文件地址，然后把它拷到 libs 文件夹下，就能像别的 jar 包一样处理了。
-
 另外在 External Libraries 目录还能看到隐藏的 jar，比如 retrofit，其实它有引用 okhttp，okhttp 又引用了 okio，这些也是需要的，一并拷到 libs 文件夹下。
+
+**4、在64位设备上使用32位的so库，如何编写Android.mk文件**
+
+1. 系统是怎样判断一个应用是32/64位架构
+2. 如何在源码中将自己写的应用编译成32/64位
+3. 系统级应用如何使用apk自身的库文件
+4. android默认的压缩优化引发的问题
+
+先给出完整的Android.mk文件：
+
+```makefile
+LOCAL_PATH:= $(call my-dir)
+include $(CLEAR_VARS)
+
+LOCAL_MODULE_TAGS := optional
+
+LOCAL_SRC_FILES := \
+    $(call all-java-files-under, src)
+
+LOCAL_STATIC_JAVA_LIBRARIES := \
+    AngstrongUVCCameraEngine \
+	androidx.annotation_annotation
+
+LOCAL_JNI_SHARED_LIBRARIES += \
+    libopencv_world \
+	libwarp_handle \
+	libwarp_v20
+LOCAL_MULTILIB := 32
+LOCAL_PACKAGE_NAME := AsjCameraDemo
+LOCAL_PRIVATE_PLATFORM_APIS := true
+LOCAL_CERTIFICATE := platform
+LOCAL_PROGUARD_ENABLED := disabled
+LOCAL_DEX_PREOPT := false
+include $(BUILD_PACKAGE)
+
+include $(CLEAR_VARS)
+LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES := AngstrongUVCCameraEngine:libs/AngstrongUVCCameraEngine.jar
+include $(BUILD_MULTI_PREBUILT)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_SUFFIX := .so
+LOCAL_MODULE := libopencv_world
+LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+LOCAL_SRC_FILES_arm :=libs/armeabi-v7a/$(LOCAL_MODULE).so
+LOCAL_MODULE_TARGET_ARCHS:= arm
+LOCAL_MULTILIB := 32
+include $(BUILD_PREBUILT)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_SUFFIX := .so
+LOCAL_MODULE := libwarp_handle
+LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+LOCAL_SRC_FILES_arm :=libs/armeabi-v7a/$(LOCAL_MODULE).so
+LOCAL_MODULE_TARGET_ARCHS:= arm
+LOCAL_MULTILIB := 32
+include $(BUILD_PREBUILT)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_SUFFIX := .so
+LOCAL_MODULE := libwarp_v20
+LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+LOCAL_SRC_FILES_arm :=libs/armeabi-v7a/$(LOCAL_MODULE).so
+LOCAL_MODULE_TARGET_ARCHS:= arm
+LOCAL_MULTILIB := 32
+include $(BUILD_PREBUILT)
+```
+
+1. 如果apk包中lib文件夹下有.so库，就根据这个.so库的架构模式，确定app的primaryCpuAbi的值
+2. 对于system app, 如果没法通过第一步确定primaryCpuAbi的值，PKMS会根据/system/app/${APP_NAME}/lib和/system/app/${APP_NAME}/lib64这两个文件夹是否存在，来确定它的primaryCpuAbi的值
+3. 对于还没有确定的app, 在最后还会将自己的primaryCpuAbi值与和他使用相同UID的package的值设成一样
+4. 对于到这里还没有确认primaryCpuAbi的app，就会在启动进程时使用ro.product.cpu.abilist这个property的值的第一项作为它关联的ABI
+由于我们的是系统级的app, 库文件都是编译到system/lib/ 或 vendor/lib等目录下, apk自身不存在lib文件夹, 导致最终会走到上面提到的四点中的最后一点, 系统属性ro.product.cpu.abilist 第一项为 arm64-v8a, 所以我们的程序就成为了64位应用。
+只要在应用的目录下出现lib/arm而不是lib/arm64的文件夹, 应该就可以让系统认为是32位架构的程序了, 于是修改了Android.mk:
+
+```makefile
+LOCAL_JNI_SHARED_LIBRARIES += \
+    libopencv_world \
+	libwarp_handle \
+	libwarp_v20
+LOCAL_MULTILIB := 32
+```
+
+编译生成的产物目录下产生了lib/arm文件夹, 果然不再报找不到库文件的错误, 使用ps -A | grep zygote命令查看, 我们的应用进程也确实是32位zygote派生, 这就说明我们的应用彻彻底底的成为了一个32位应用.
+其中LOCAL_MULTILIB := 32 的作用是在应用目录下生成lib/arm, LOCAL_JNI_SHARED_LIBRARIES 作用是将.so文件打包到lib/arm文件夹下, 这样一来，虽然是系统应用, 也不用去system/lib 或者 vendor/lib下去找库文件, 优先使用自身库文件。
+
+**android默认的压缩优化引发的问题**
+
+虽然目前为止能够解决了在64位设备上调用32位的so库，但是在运行时报出java.lang.UnsatisfiedLinkError: JNI_ERR returned from JNI_OnLoad错误。
+熟悉C的人看到这种错误肯定很熟悉, 是因为库的参数不兼容或者调用这传入的参数和.so中的参数不匹配导致的。Android有一个压缩优化的属性可供配置：
+
+LOCAL_PROGUARD_ENABLED := disabled 禁用混淆
+LOCAL_DEX_PREOPT := false  关闭优化
+
+而android源码中默认是打开LOCAL_DEX_PREOPT属性的, 优化了so文件, 导致so库里面的jni函数接口产生了变化, 于是就出现了上面的错误.。关闭优化，将SELinux权限问题处理掉, 终于可以正常使用了。
