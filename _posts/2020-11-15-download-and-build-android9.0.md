@@ -45,19 +45,19 @@ tags:
 
 为了方便mount分区，在~/.bash_profile添加一个mountAndroid的函数：
 
-mountAndroid() { hdiutil attach /Users/xxx/android.dmg.sparseimage -mountpoint /Volumes/android/android9; }
+`mountAndroid() { hdiutil attach /Users/xxx/android.dmg.sparseimage -mountpoint /Volumes/android/android9; }`
 
 ## 安装Repo工具
 
 - 创建目录 ： `mkdir ～/bin`
+
 - 写入到path中 ： `PATH=～/bin:$PATH`
+
 - 下载Repo
 
-```
-   curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-   chmod a+x ~/bin/repo
-12
-```
+  `curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo`
+
+  `chmod a+x ~/bin/repo`
 
 - 将Repo中的下载地址改为清华大学的镜像源。
   编辑`~/bin/repo` 文件，修改REPO_URL为的源地址
@@ -103,7 +103,7 @@ fatal: early EOF
 fatal: index-pack failed
 ```
 
-根据https://blog.csdn.net/weixin_40355324/article/details/84845678的解决方案，我这边添加了下面的指令：
+根据的解决方案[https://blog.csdn.net/weixin_40355324/article/details/84845678](https://blog.csdn.net/weixin_40355324/article/details/84845678)，我这边添加了下面的指令：
 
 `git  config --global https.postBuffer 2428800000`
 
@@ -111,9 +111,9 @@ fatal: index-pack failed
 
 经过将近10个小时后下载完毕。
 
-清华镜像还有一种拉取代码的方法，直接下载压缩包： https://mirrors.tuna.tsinghua.edu.cn/aosp-monthly/
+清华镜像还有一种拉取代码的方法，直接下载压缩包： [https://mirrors.tuna.tsinghua.edu.cn/aosp-monthly/](https://mirrors.tuna.tsinghua.edu.cn/aosp-monthly/)
 
-参考https://mirrors.tuna.tsinghua.edu.cn/help/AOSP/
+参考[https://mirrors.tuna.tsinghua.edu.cn/help/AOSP/](https://mirrors.tuna.tsinghua.edu.cn/help/AOSP/)
 
 下载完毕后，如果容量有限,此时可以删除掉.repo文件了.
 
@@ -126,7 +126,7 @@ fatal: index-pack failed
 | Vendor image                                                | Google   | [Link](https://dl.google.com/dl/android/aosp/google_devices-sailfish-pq3a.190801.002-b6b1636d.tgz) | 5b9429aa3eacc15351d2c15cf4d0a59cc200fb91645519aae79c081e47908aab |
 | GPS, Audio, Camera, Gestures, Graphics, DRM, Video, Sensors | Qualcomm | [Link](https://dl.google.com/dl/android/aosp/qcom-sailfish-pq3a.190801.002-a69b0aa6.tgz) | 2d7ddecb494aa9b17705689d7dcaad8e1c1a51f659b67920c056a905649cc6bf |
 
-在https://source.android.google.cn/setup/start/build-numbers#source-code-tags-and-builds查看代码版本所对应的硬件驱动
+在 [https://source.android.google.cn/setup/start/build-numbers#source-code-tags-and-builds](https://source.android.google.cn/setup/start/build-numbers#source-code-tags-and-builds) 查看代码版本所对应的硬件驱动
 
 | PQ3A.190801.002 | android-9.0.0_r46 | Pie  | Pixel 3 XL、Pixel 3、Pixel 2 XL、Pixel 2、Pixel XL、Pixel | 2019-08-01 |
 | --------------- | ----------------- | ---- | --------------------------------------------------------- | ---------- |
@@ -134,16 +134,17 @@ fatal: index-pack failed
 
 然后你会得到两个文件tgz的压缩文件，把这两个文件放到下载好的源码根目录，用tar -zxvf + 文件名,解压出来，得出两个sh文件,然后执行两个文件。我的是extract-qcom-sargo.sh和extract-google_devices-sargo.sh，执行命令为
 
-```shell
-./extract-google_devices-sargo.sh
-./extract-qcom-sargo.sh
-```
+`./extract-google_devices-sargo.sh`
+
+`./extract-qcom-sargo.sh`
 
 其中在执行时，需要输入键盘ENTER和输入I ACCEPT
 
 ## 编译Android源码
 
-由于我之前编译过android8.1的源码，所以执行下面的命令后一次性就编译通过了，但之前编译Android8.1的时候需要搭建一些环境，[MacBooK pro编译Android 8.1源码](https://blog.csdn.net/u010407220/article/details/100898372)
+由于我之前编译过android8.1的源码，所以执行下面的命令后一次性就编译通过了，但之前编译Android8.1的时候需要搭建一些环境,参考
+
+[MacBooK pro编译Android 8.1源码](https://blog.csdn.net/u010407220/article/details/100898372)
 
 [Mac OS10.12 编译Android源码8.1](https://blog.csdn.net/a740169405/article/details/81142263)
 
@@ -270,4 +271,4 @@ Finished. Total time: 47.532s
 
 我的pixel从Android 10成功烧录到了编译的Android 9.
 
-注意：不要烧录https://developers.google.com/android/images的镜像，烧录后会导致OEM锁重新锁上，如果是V版的话，就比较麻烦了，需要去某宝找专业人士解锁。
+注意：不要烧录[https://developers.google.com/android/images](https://developers.google.com/android/images)的镜像，烧录后会导致OEM锁重新锁上，如果是V版的话，就比较麻烦了，需要去某宝找专业人士解锁。
