@@ -15,7 +15,7 @@ tags:
 
 手机：谷歌手机Pixel
 
-下载源码版本：android-9.0.0_r46
+下载源码版本：android-9.0.0_r46 android-11.0.0_r17
 
 ## 创建磁盘映像
 
@@ -272,3 +272,86 @@ Finished. Total time: 47.532s
 我的pixel从Android 10成功烧录到了编译的Android 9.
 
 注意：不要烧录[https://developers.google.com/android/images](https://developers.google.com/android/images)的镜像，烧录后会导致OEM锁重新锁上，如果是V版的话，就比较麻烦了，需要去某宝找专业人士解锁。
+
+## 下载、编译和烧录android11
+
+下载android11的方法跟上面一样，我手头上的设备是pixel 3 XL，因此下载了android-11.0.0_r17。
+
+编译android11的代码时，刚开始会报下面的错误：
+
+`variant "android_common": glob: fcntl: too many open files`
+
+参考[https://www.jianshu.com/p/d6f7d1557f20和[https://superuser.com/questions/433746/is-there-a-fix-for-the-too-many-open-files-in-system-error-on-os-x-10-7-1](https://superuser.com/questions/433746/is-there-a-fix-for-the-too-many-open-files-in-system-error-on-os-x-10-7-1)，设置下面的指令后，编译通过。
+
+`sudo launchctl limit maxfiles 64000 524288`
+
+查看maxfiles：
+
+`launchctl limit maxfiles`
+
+编译成功的log：
+
+```
+[100% 89507/89507] build out/target/product/crosshatch/obj/PACKAGING/check-all-partition-sizes_intermediates/check_all_partition_s
+
+build completed successfully (05:30:38 (hh:mm:ss))
+```
+
+烧录到pixel 3 XL的方法跟上面的一样。
+
+```
+xxxMacBook-Pro:android9 xxx$ export ANDROID_PRODUCT_OUT=/Volumes/vane-T5/aosp/android11/out/target/product/crosshatch/
+xxxMacBook-Pro:android9 xxx$ fastboot flashall -w
+--------------------------------------------
+Bootloader Version...: b1c1-0.3-6623201
+Baseband Version.....: g845-00107-200702-B-6648703
+Serial Number........: FLHG65002576010J91F000K6
+--------------------------------------------
+Checking 'product'                                 OKAY [  0.058s]
+Setting current slot to 'a'                        OKAY [  0.144s]
+Sending 'boot_a' (65536 KB)                        OKAY [  1.560s]
+Writing 'boot_a'                                   OKAY [  0.386s]
+Sending 'dtbo_a' (8192 KB)                         OKAY [  0.280s]
+Writing 'dtbo_a'                                   OKAY [  0.109s]
+Sending 'vbmeta_a' (8 KB)                          OKAY [  0.120s]
+Writing 'vbmeta_a'                                 OKAY [  0.067s]
+Rebooting into fastboot                            OKAY [  0.060s]
+< waiting for any device >
+Sending 'system_a' (4 KB)                          OKAY [  0.004s]
+Updating super partition                           OKAY [  0.022s]
+Resizing 'product_a'                               OKAY [  0.005s]
+Resizing 'system_a'                                OKAY [  0.005s]
+Resizing 'system_ext_a'                            OKAY [  0.005s]
+Resizing 'vendor_a'                                OKAY [  0.005s]
+Resizing 'product_a'                               OKAY [  0.005s]
+Sending 'product_a' (224264 KB)                    OKAY [  5.699s]
+Writing 'product_a'                                OKAY [  1.154s]
+Resizing 'system_a'                                OKAY [  0.004s]
+Sending sparse 'system_a' 1/3 (262140 KB)          OKAY [  6.774s]
+Writing 'system_a'                                 OKAY [  1.355s]
+Sending sparse 'system_a' 2/3 (262140 KB)          OKAY [  6.843s]
+Writing 'system_a'                                 OKAY [  1.314s]
+Sending sparse 'system_a' 3/3 (189012 KB)          OKAY [  4.888s]
+Writing 'system_a'                                 OKAY [  0.962s]
+Resizing 'system_ext_a'                            OKAY [  0.004s]
+Sending 'system_ext_a' (104004 KB)                 OKAY [  2.671s]
+Writing 'system_ext_a'                             OKAY [  0.599s]
+Sending 'system_b' (45060 KB)                      OKAY [  1.173s]
+Writing 'system_b'                                 OKAY [  0.244s]
+Resizing 'vendor_a'                                OKAY [  0.006s]
+Sending sparse 'vendor_a' 1/3 (262140 KB)          OKAY [  6.834s]
+Writing 'vendor_a'                                 OKAY [  1.304s]
+Sending sparse 'vendor_a' 2/3 (262140 KB)          OKAY [  6.802s]
+Writing 'vendor_a'                                 OKAY [  1.312s]
+Sending sparse 'vendor_a' 3/3 (36008 KB)           OKAY [  0.947s]
+Writing 'vendor_a'                                 OKAY [  0.247s]
+Erasing 'userdata'                                 OKAY [  4.445s]
+Erase successful, but not automatically formatting.
+File system type raw not supported.
+Erasing 'metadata'                                 OKAY [  0.010s]
+Erase successful, but not automatically formatting.
+File system type raw not supported.
+Rebooting                                          OKAY [  0.000s]
+Finished. Total time: 77.116s
+```
+
