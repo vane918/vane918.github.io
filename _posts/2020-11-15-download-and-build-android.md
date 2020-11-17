@@ -13,7 +13,7 @@ tags:
 
 操作系统：macOS Mojave 10.14.6
 
-手机：谷歌手机Pixel
+手机：谷歌手机Pixel Pixel 3 XL
 
 下载源码版本：android-9.0.0_r46 android-11.0.0_r17
 
@@ -281,7 +281,7 @@ Finished. Total time: 47.532s
 
 `variant "android_common": glob: fcntl: too many open files`
 
-参考[https://www.jianshu.com/p/d6f7d1557f20和[https://superuser.com/questions/433746/is-there-a-fix-for-the-too-many-open-files-in-system-error-on-os-x-10-7-1](https://superuser.com/questions/433746/is-there-a-fix-for-the-too-many-open-files-in-system-error-on-os-x-10-7-1)，设置下面的指令后，编译通过。
+参考[https://www.jianshu.com/p/d6f7d1557f20](https://www.jianshu.com/p/d6f7d1557f20)和[https://superuser.com/questions/433746/is-there-a-fix-for-the-too-many-open-files-in-system-error-on-os-x-10-7-1](https://superuser.com/questions/433746/is-there-a-fix-for-the-too-many-open-files-in-system-error-on-os-x-10-7-1)，设置下面的指令后，编译通过。
 
 `sudo launchctl limit maxfiles 64000 524288`
 
@@ -300,8 +300,8 @@ build completed successfully (05:30:38 (hh:mm:ss))
 烧录到pixel 3 XL的方法跟上面的一样。
 
 ```
-xxxMacBook-Pro:android9 xxx$ export ANDROID_PRODUCT_OUT=/Volumes/vane-T5/aosp/android11/out/target/product/crosshatch/
-xxxMacBook-Pro:android9 xxx$ fastboot flashall -w
+xxxMacBook-Pro:android11 xxx$ export ANDROID_PRODUCT_OUT=/Volumes/vane-T5/aosp/android11/out/target/product/crosshatch/
+xxxMacBook-Pro:android11 xxx$ fastboot flashall -w
 --------------------------------------------
 Bootloader Version...: b1c1-0.3-6623201
 Baseband Version.....: g845-00107-200702-B-6648703
