@@ -201,7 +201,7 @@ void onResourcesLoaded(LayoutInflater inflater, int layoutResource) {
 
 View被添加到屏幕窗口的流程总结如下：
 
-首先系统会创建一个系统顶层容器：DecorView。DecorView是一个ViewGroup容器，继承FrameLayout，是PhoneWindow持有的一个实例，它是所有程序的顶层View，在系统内部进行初始化。当DecorView初始化完成之后，系统会根据系统的主题特性，去加载一个基础容器，不如说，NoActionBar，或者是DarkActionBar，不同的主题加载的基础容器也不一样。但无论如何，这样的基础容器中一定包含一个id为content的FrameLayout。而我们开发者调用`setContentView()`设置的xml布局文件是经过解析之后被添加到基础布局中的FrameLayout。
+首先系统会创建一个系统顶层容器：DecorView。DecorView是一个ViewGroup容器，继承FrameLayout，是PhoneWindow持有的一个实例，它是所有程序的顶层View，在系统内部进行初始化。当DecorView初始化完成之后，系统会根据系统的主题特性，去加载一个基础容器，比如说，NoActionBar，或者是DarkActionBar，不同的主题加载的基础容器也不一样。但无论如何，这样的基础容器中一定包含一个id为content的FrameLayout。而我们开发者调用`setContentView()`设置的xml布局文件是经过解析之后被添加到基础布局中的FrameLayout。
 
 ## 2.View的绘制流程
 

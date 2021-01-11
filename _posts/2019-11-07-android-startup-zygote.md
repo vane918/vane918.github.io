@@ -26,7 +26,7 @@ tags:
 
 ## 1 概述
 
-在Android系统中，JavaVM(Java虚拟机)、应用程序进程以及运行系统的关键服务的SystemServer进程都是由Zygote进程来创建的，我们也将它称为孵化器。它通过fock(复制进程)的形式来创建应用程序进程和SystemServer进程，由于Zygote进程在启动时会创建JavaVM，因此通过fock而创建的应用程序进程和SystemServer进程可以在内部获取一个JavaVM的实例拷贝。 
+在Android系统中，JavaVM(Java虚拟机)、应用程序进程以及运行系统的关键服务的SystemServer进程都是由Zygote进程来创建的，我们也将它称为孵化器。它通过系统调用函数fork(复制进程)的形式来创建应用程序进程和SystemServer进程，由于Zygote进程在启动时会创建JavaVM，因此通过fork而创建的应用程序进程和SystemServer进程可以在内部获取一个JavaVM的实例拷贝。 
 
 ## 2 init.zygoteXX.rc
 
@@ -817,7 +817,7 @@ Runnable runSelectLoop(String abiList) {
 
  Zygote启动过程的调用流程图： 
 
-![restart-service](/images/startup/zygote_start.png)
+![restart-service](/images/startup/zygote_start.PNG)
 
 1. 解析init.zygote.rc中的参数，创建AppRuntime并调用AppRuntime.start()方法；
 2. 调用AndroidRuntime的startVM()方法创建虚拟机，再调用startReg()注册JNI函数；
