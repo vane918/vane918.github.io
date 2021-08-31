@@ -132,38 +132,40 @@ adb shell am broadcast -a com.bytedance.raphael.ACTION_PRINT -f 0x01000000。
 
 **相关资料**
 
-> 1. **Raphael 开源地址：**
->
->    https://github.com/bytedance/memory-leak-detector
->
-> 2. **xHook 链接：**
->
->    https://github.com/iqiyi/xHook
->
-> 3. **xDL 链接：**
->
->    https://github.com/hexhacking/xDL
->
-> 4. **Android-Inline-Hook 链接：**
->
->    https://github.com/ele7enxxh/Android-Inline-Hook
->
-> 5. **And64InlineHook 链接：**
->
->    https://github.com/Rprop/And64InlineHook
->
-> 6. **malloc debug 链接：**https://android.googlesource.com/platform/bionic/+/master/libc/malloc_debug/README.md
->
-> 7. **LeakTracer 链接：**
->
->    http://www.andreasen.org/LeakTracer/
->
-> 8. [ **Android Camera内存问题剖析**](http://mp.weixin.qq.com/s?__biz=MzI1MzYzMjE0MQ==&mid=2247486499&idx=1&sn=1f38a8dd301d6fe1d0b62f7e027113de&chksm=e9d0c7c1dea74ed70621fb46b1f081626177610d98e1fbb4c4867099eb43edc051f61f1a2371&scene=21#wechat_redirect)
->
-> 9.  **libunwind llvm 编年史：**
->
->   https://zhuanlan.zhihu.com/p/33937283
->
-> 10. **ART 视角 | 如何让 GC 同步回收 native 内存：**
->
-> ​    https://juejin.cn/post/6894153239907237902
+1. **Raphael 开源地址：**
+
+   https://github.com/bytedance/memory-leak-detector
+
+2. **xHook 链接：**
+
+   https://github.com/iqiyi/xHook
+
+3. **xDL 链接：**
+
+   https://github.com/hexhacking/xDL
+
+4. **Android-Inline-Hook 链接：**
+
+   https://github.com/ele7enxxh/Android-Inline-Hook
+
+5. **And64InlineHook 链接：**
+
+   https://github.com/Rprop/And64InlineHook
+
+6. **malloc debug 链接：**
+
+   https://android.googlesource.com/platform/bionic/+/master/libc/malloc_debug/README.md
+
+7. **LeakTracer 链接：**
+
+   http://www.andreasen.org/LeakTracer/
+
+8. [ **Android Camera内存问题剖析**](http://mp.weixin.qq.com/s?__biz=MzI1MzYzMjE0MQ==&mid=2247486499&idx=1&sn=1f38a8dd301d6fe1d0b62f7e027113de&chksm=e9d0c7c1dea74ed70621fb46b1f081626177610d98e1fbb4c4867099eb43edc051f61f1a2371&scene=21#wechat_redirect)
+
+9.  **libunwind llvm 编年史：**
+
+    https://zhuanlan.zhihu.com/p/33937283
+
+10. **ART 视角 | 如何让 GC 同步回收 native 内存：**
+
+​    https://juejin.cn/post/6894153239907237902
