@@ -27,7 +27,7 @@ Android 平台上的内存问题一直是性能优化和稳定性治理的焦点
 
 事实上，native 内存泄漏治理一直不乏优秀的工具，已知的可用于调查 native 内存泄漏问题的工具主要有：LeakTracer、MTrace、MemWatch、Valgrind-memcheck、TCMalloc、LeakSanitizer 等。但由于 Android 平台的特殊性，这些工具要么不兼容，要么接入成本过高，很难在 Android 平台上落地。这些工具的原理基本都是：先代理内存分配/释放相关的函数（如：malloc/calloc/realloc/memalign/free），再通过 unwind 回溯调用堆栈，最后借助缓存管理过滤出未释放的内存分配记录。因此，这些工具的主要差异也就体现在代理实现、栈回溯和缓存管理三个方面。根据这些工具代理实现的差异，大致可以分为 hook 和 LD_PRELOAD 两大类，典型的如 malloc debug [5] 和 LeakTracer。
 
-![malloc-leaktracer.png](/images/native-leak/native-leak.png)
+![malloc-leaktracer.png](/images/native-leak/malloc-leaktracer.png)
 
 ## **malloc debug**
 
@@ -35,7 +35,7 @@ malloc debug 是 Android 系统自带的内存调试工具（官方 Native 内
 
 地址：[https://android.googlesource.com/platform/bionic/+/master/libc/malloc_debug/README.md](https://android.googlesource.com/platform/bionic/+/master/libc/malloc_debug/README.md)
 
-![malloc.png](/images/native-leak/native-leak.png)
+![malloc.png](/images/native-leak/malloc.png)
 
 我们在线下尝试使用 malloc debug 监控西瓜视频 App（配置 wrap.sh）时发现，正常启动时间小于 1s 的机型（Pixel 2 & Android 10），其冷启动时间被拉长到了 11s+。而且在正常使用过程中滑动时的卡顿感非常明显，页面切换时耗时难以接受，监控过程中应用的使用体验极差。不仅如此，西瓜视频在 malloc debug 监控过程中还会遇到必现的栈回溯 crash（堆栈如下，《libunwind llvm 编年史》[8] 有相关分析）。
 
@@ -160,7 +160,9 @@ adb shell am broadcast -a com.bytedance.raphael.ACTION_PRINT -f 0x01000000。
 
    http://www.andreasen.org/LeakTracer/
 
-8. [ **Android Camera内存问题剖析**](http://mp.weixin.qq.com/s?__biz=MzI1MzYzMjE0MQ==&mid=2247486499&idx=1&sn=1f38a8dd301d6fe1d0b62f7e027113de&chksm=e9d0c7c1dea74ed70621fb46b1f081626177610d98e1fbb4c4867099eb43edc051f61f1a2371&scene=21#wechat_redirect)
+8. **Android Camera内存问题剖析**
+
+   http://mp.weixin.qq.com/s?__biz=MzI1MzYzMjE0MQ==&mid=2247486499&idx=1&sn=1f38a8dd301d6fe1d0b62f7e027113de&chksm=e9d0c7c1dea74ed70621fb46b1f081626177610d98e1fbb4c4867099eb43edc051f61f1a2371&scene=21#wechat_redirect
 
 9.  **libunwind llvm 编年史：**
 
@@ -169,3 +171,4 @@ adb shell am broadcast -a com.bytedance.raphael.ACTION_PRINT -f 0x01000000。
 10. **ART 视角 | 如何让 GC 同步回收 native 内存：**
 
 ​    https://juejin.cn/post/6894153239907237902
+
