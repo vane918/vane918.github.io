@@ -27,7 +27,7 @@ Android 平台上的内存问题一直是性能优化和稳定性治理的焦点
 
 事实上，native 内存泄漏治理一直不乏优秀的工具，已知的可用于调查 native 内存泄漏问题的工具主要有：LeakTracer、MTrace、MemWatch、Valgrind-memcheck、TCMalloc、LeakSanitizer 等。但由于 Android 平台的特殊性，这些工具要么不兼容，要么接入成本过高，很难在 Android 平台上落地。这些工具的原理基本都是：先代理内存分配/释放相关的函数（如：malloc/calloc/realloc/memalign/free），再通过 unwind 回溯调用堆栈，最后借助缓存管理过滤出未释放的内存分配记录。因此，这些工具的主要差异也就体现在代理实现、栈回溯和缓存管理三个方面。根据这些工具代理实现的差异，大致可以分为 hook 和 LD_PRELOAD 两大类，典型的如 malloc debug [5] 和 LeakTracer。
 
-[https://mmbiz.qpic.cn/mmbiz_png/5EcwYhllQOhiapPBQiaROYribzP8MzKXGtZ9ficic3j2JPRPib10zVuiaV7OS0LnRL8V8h5Pdh5942tGKXdoQTqe59Nfw/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1](https://mmbiz.qpic.cn/mmbiz_png/5EcwYhllQOhiapPBQiaROYribzP8MzKXGtZ9ficic3j2JPRPib10zVuiaV7OS0LnRL8V8h5Pdh5942tGKXdoQTqe59Nfw/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1)
+![malloc-leaktracer.png](/images/native-leak/native-leak.png)
 
 ## **malloc debug**
 
@@ -35,11 +35,9 @@ malloc debug 是 Android 系统自带的内存调试工具（官方 Native 内
 
 地址：[https://android.googlesource.com/platform/bionic/+/master/libc/malloc_debug/README.md](https://android.googlesource.com/platform/bionic/+/master/libc/malloc_debug/README.md)
 
-[https://mmbiz.qpic.cn/mmbiz_png/5EcwYhllQOhiapPBQiaROYribzP8MzKXGtZrvLZxwdLYLzPxZbJDRPuftkTHtUxiaOcWa58YMZ5KafZQn9KHTuWZVw/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1](https://mmbiz.qpic.cn/mmbiz_png/5EcwYhllQOhiapPBQiaROYribzP8MzKXGtZrvLZxwdLYLzPxZbJDRPuftkTHtUxiaOcWa58YMZ5KafZQn9KHTuWZVw/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1)
+![malloc.png](/images/native-leak/native-leak.png)
 
 我们在线下尝试使用 malloc debug 监控西瓜视频 App（配置 wrap.sh）时发现，正常启动时间小于 1s 的机型（Pixel 2 & Android 10），其冷启动时间被拉长到了 11s+。而且在正常使用过程中滑动时的卡顿感非常明显，页面切换时耗时难以接受，监控过程中应用的使用体验极差。不仅如此，西瓜视频在 malloc debug 监控过程中还会遇到必现的栈回溯 crash（堆栈如下，《libunwind llvm 编年史》[8] 有相关分析）。
-
-[https://mmbiz.qpic.cn/mmbiz_png/5EcwYhllQOgk1H5opHNJgyetPC6ebrafjCmp1tCR7OmpXiciagYOvtNm4CHt45fe8A6XcwialGjGP0WeOic4bcpVQw/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1](https://mmbiz.qpic.cn/mmbiz_png/5EcwYhllQOgk1H5opHNJgyetPC6ebrafjCmp1tCR7OmpXiciagYOvtNm4CHt45fe8A6XcwialGjGP0WeOic4bcpVQw/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1)
 
 网友的使用分享：
 
@@ -131,3 +129,41 @@ adb shell am broadcast -a com.bytedance.raphael.ACTION_PRINT -f 0x01000000。
 ![create.png](/images/native-leak/create.png)
 
 由于我的项目预览时两路流，每一路流都有一个线程，两路流轮流调用getThreadEvent函数，因此每次m_tid都和当前的线程不等，导致每次取流时都会调用上图红框的函数进行创建hEvent，从而导致内存泄漏。
+
+**相关资料**
+
+> 1. **Raphael 开源地址：**
+>
+>    https://github.com/bytedance/memory-leak-detector
+>
+> 2. **xHook 链接：**
+>
+>    https://github.com/iqiyi/xHook
+>
+> 3. **xDL 链接：**
+>
+>    https://github.com/hexhacking/xDL
+>
+> 4. **Android-Inline-Hook 链接：**
+>
+>    https://github.com/ele7enxxh/Android-Inline-Hook
+>
+> 5. **And64InlineHook 链接：**
+>
+>    https://github.com/Rprop/And64InlineHook
+>
+> 6. **malloc debug 链接：**https://android.googlesource.com/platform/bionic/+/master/libc/malloc_debug/README.md
+>
+> 7. **LeakTracer 链接：**
+>
+>    http://www.andreasen.org/LeakTracer/
+>
+> 8. [ **Android Camera内存问题剖析**](http://mp.weixin.qq.com/s?__biz=MzI1MzYzMjE0MQ==&mid=2247486499&idx=1&sn=1f38a8dd301d6fe1d0b62f7e027113de&chksm=e9d0c7c1dea74ed70621fb46b1f081626177610d98e1fbb4c4867099eb43edc051f61f1a2371&scene=21#wechat_redirect)
+>
+> 9.  **libunwind llvm 编年史：**
+>
+>   https://zhuanlan.zhihu.com/p/33937283
+>
+> 10. **ART 视角 | 如何让 GC 同步回收 native 内存：**
+>
+> ​    https://juejin.cn/post/6894153239907237902
