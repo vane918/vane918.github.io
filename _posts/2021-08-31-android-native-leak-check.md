@@ -15,8 +15,6 @@ tags:
 
 以下内容是搬运字节旗下的西瓜团队的文章：
 
-西瓜视频稳定性治理体系建设二：Raphael 原理及实践
-
 [西瓜视频稳定性治理体系建设二：Raphael 原理及实践](https://mp.weixin.qq.com/s/RF3m9_v5bYTYbwY-d1RloQ)
 
 # **背景**
@@ -75,7 +73,7 @@ Android 平台上的 native 内存泄漏检测通常都是在程序运行过程�
 
 ## **治理实践**
 
-Raphael 在字节跳动内部使用非常广泛，是字节跳动 native 协会指定的 native 内存泄漏检测工具。在治理实践中，Raphael 覆盖了几乎所有的 native 内存使用场景，辅助解决了大量的 native 内存泄漏和内存使用不合理的问题。接下来通过四个典型的案例简单介绍下 Raphael 的监控能力和基于 Raphael 的数据分析方法（应用自身的，Java 层的，webview 的，系统层的）
+Raphael 在字节跳动内部使用非常广泛，是字节跳动 native 协会指定的 native 内存泄漏检测工具。在治理实践中，Raphael 覆盖了几乎所有的 native 内存使用场景，辅助解决了大量的 native 内存泄漏和内存使用不合理的问题。
 
 # 案例 使用Raphael 定位内存泄漏
 
@@ -141,5 +139,5 @@ adb shell am broadcast -a com.bytedance.raphael.ACTION_PRINT -f 0x01000000。
 7. [LeakTracer 链接](http://www.andreasen.org/LeakTracer/)
 8. [Android Camera内存问题剖析](http://mp.weixin.qq.com/s?__biz=MzI1MzYzMjE0MQ==&mid=2247486499&idx=1&sn=1f38a8dd301d6fe1d0b62f7e027113de&chksm=e9d0c7c1dea74ed70621fb46b1f081626177610d98e1fbb4c4867099eb43edc051f61f1a2371&scene=21#wechat_redirect)
 9. [libunwind llvm编年史](https://zhuanlan.zhihu.com/p/33937283)
-10. [ART虚拟机 | 如何让GC同步回收native内存](https://juejin.cn/post/6894153239907237902)
+10. [ART虚拟机 如何让GC同步回收native内存](https://juejin.cn/post/6894153239907237902)
 
