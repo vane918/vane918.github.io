@@ -266,7 +266,7 @@ bool bootAnimationDisabled() {
 
 **关键属性说明：**
 
-- debug.sf.nobootanimation: 调试开关，用于禁用开机动画
+- **debug.sf.nobootanimation: 调试开关，用于禁用开机动画**
 - ro.boot.quiescent: 静默启动模式标志
 - ro.bootanim.quiescent.enabled: 在静默启动模式下是否允许显示开机动画
 
@@ -360,20 +360,24 @@ p 0 0 part1
 
 基本参数：
 
+```
 1280 720 12
 |    |    |
 |    |    └── 帧率(fps)
 |    └──────── 高度(height)
 └──────────── 宽度(width)
+```
 
 动画部分定义：
 
+```
 p 1 0 part0
 | | | |
 | | | └── 文件夹名称
 | | └──── 暂停时间(pause)
 | └────── 播放次数(count)
 └──────── 播放类型(type)
+```
 
 **参数详解**
 
@@ -412,7 +416,10 @@ n: 暂停n帧
 
 将bootanimation.zip放在/product/media/目录下即可。
 
-生成bootanimation.zip的方式为存储模式。选择存储模式，不要选择压缩模式，不然会导致不开机等各种问题。bootanimation.zip仅仅是打包了的文件，并没有压缩，切记。
+**制作开机动画两个要点**
+
+1. 压缩时选择“存储”模式，不要选择压缩模式。
+2. 资源文件命名序号，需要和最大序号位数相同，位数不够，前面补零。如000、001、002...、100、101。
 
 
 
