@@ -17,18 +17,38 @@
 <img src="/img/apple-touch-icon.png" width="0" height="0" />
 <!-- Migrate from head to bottom, no longer block render and still work -->
 
-<script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fancybox/dist/js/jquery.fancybox.cjs.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $("p img").each(function() {
-                var strA = "<a data-fancybox='gallery' ref='gallery1' href='" + this.src + "'></a>";
-                $(this).wrapAll(strA);
-            });
-
-            $('[data-fancybox="gallery"]').fancybox();
+<script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+<script>
+    $(document).ready(function() {
+        $("p img").each(function() {
+            var strA = "<a data-fancybox='gallery' href='" + this.src + "'></a>";
+            $(this).wrapAll(strA);
         });
-    </script>
+
+        Fancybox.bind('[data-fancybox="gallery"]', {
+            compact: false,
+            contentClick: "iterateZoom",
+            Images: {
+                Panzoom: {
+                    maxScale: 2,
+                },
+            },
+            Toolbar: {
+                display: {
+                    left: [
+                        "infobar",
+                    ],
+                    middle: [],
+                    right: [
+                        "iterateZoom",
+                        "close",
+                    ],
+                }
+            }
+        });
+    });
+</script>
+
 
 </body>
 
