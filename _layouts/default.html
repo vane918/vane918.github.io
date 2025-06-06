@@ -35,16 +35,26 @@
             },
             Toolbar: {
                 display: {
-                    left: [
-                        "infobar",
-                    ],
+                    left: ["infobar"],
                     middle: [],
                     right: [
-                        "iterateZoom",
-                        "close",
+                      "iterateZoom",
+                      "fullscreen",
+                      "thumbs",
+                      "close",
                     ],
                 }
-            }
+            },
+            // 设置背景颜色
+            bg: 'rgba(255, 255, 255, 0.9)', // 白色背景，带透明度
+            Animation: {
+                show: {
+                    duration: 300, // 设置放大动画的持续时间（毫秒）
+                },
+                hide: {
+                    duration: 300, // 设置缩小动画的持续时间（毫秒）
+                },
+            },
         });
     });
 </script>
